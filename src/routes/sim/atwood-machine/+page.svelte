@@ -252,40 +252,4 @@
 	#accel-text {
 		@apply text-sm mt-2;
 	}
-	main {
-		@apply px-2 bg-yellow-200;
-	}
-	h1 {
-		@apply font-bold text-xl tracking-wide text-center mb-3;
-	}
-	header > p {
-		@apply leading-relaxed;
-	}
-
-	section {
-		@apply bg-slate-50 p-2 my-3 border-blue-50 rounded-lg;
-	}
-
-	h2 {
-		@apply font-bold text-lg text-slate-800;
-	}
-
-	hr {
-		@apply border-slate-500 border-2 my-3;
-	}
-
-	label {
-		@apply font-semibold text-slate-600;
-	}
-	.input-cluster {
-		@apply grid grid-cols-[8ch_1fr] gap-1 items-center;
-	}
-
-	ul {
-		@apply list-inside list-disc text-xs;
-	}
-
-	b.lbl {
-		@apply font-semibold text-slate-900;
-	}
 </style>
