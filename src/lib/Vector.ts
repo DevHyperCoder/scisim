@@ -31,6 +31,10 @@ export class Vector {
 		return new Vector(this.x * Math.cos(angleRad), this.y * Math.sin(angleRad));
 	}
 
+	multiply(scalar: number) {
+		return new Vector(this.x * scalar, this.y * scalar);
+	}
+
 	// Mutable add
 	madd(v: Vector) {
 		this.x += v.x;

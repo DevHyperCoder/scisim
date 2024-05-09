@@ -12,7 +12,7 @@
 
 	let planeLength = 5;
 	$: objectLengthFromTop =
-		objectLengthFrom === 'bottom' ? objectLengthInput : planeLength - objectLengthInput;
+		objectLengthFrom === 'top' ? objectLengthInput : planeLength - objectLengthInput;
 	$: bodyPerc = objectLengthFromTop / planeLength;
 
 	let staticFrictionCoeff = 0;
@@ -21,11 +21,82 @@
 	let mass = 1;
 	let gravity = 10;
 
+	let _forceX = 0.0;
+	let _forceY = 0.0;
+	$: userForce = new Vector(_forceX, _forceY);
+
 	let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D;
 	let ready = false;
 
 	$: if (ready) draw(angle, bodyPerc);
+
+	// Simulation
+
+	let netForce = Vector.ZERO();
+	let netAcceleration = Vector.ZERO();
+	let netVel = Vector.ZERO();
+
+	let objPos = new Vector(0.0, objectLengthFromTop);
+	let objVel = Vector.ZERO();
+
+	let lastTimestamp: number;
+	let simSpeed = 1.0;
+	let t = 0.0;
+
+	function play() {
+		console.log(objectLengthFromTop);
+		t=0.0;
+		objPos = new Vector(0.0, objectLengthFromTop);
+		objVel = Vector.ZERO();
+		requestAnimationFrame((t) => {
+			lastTimestamp = t;
+			simulate(t);
+		});
+	}
+
+	// 0 is the top right corner of the plane
+	function simulate(timestamp: number) {
+		const _elapsed = timestamp - lastTimestamp;
+		lastTimestamp = timestamp;
+		const elapsedMS = _elapsed / simSpeed;
+		const elapsedS = elapsedMS / 1000.0;
+		t+=elapsedS
+
+		const mg = mass * gravity;
+		//const gravitationalForce = new Vector(mg * Math.sin(angleRad), mg * Math.cos(angleRad));
+		const gravitationalForce = new Vector(0, mg)
+
+		netForce = gravitationalForce.add(userForce);
+		const acceleration = netForce.multiply(1 / gravity);
+
+		const dv = acceleration.multiply(elapsedS);
+		objVel.madd(dv);
+
+		const dx = objVel.multiply(elapsedS);
+		objPos.madd(dx);
+
+		// TODO: objPos . x is not rendered correctly now.
+
+		const planeYLimit = planeLength * Math.sin(angleRad);
+		objPos.y = Math.min(planeYLimit, objPos.y);
+
+		const planeXCoord = objPos.y / Math.tan(angleRad)
+		objPos.x = Math.max(planeXCoord, objPos.x);
+
+		console.log({ objPos, elapsedMS });
+		netAcceleration = acceleration;
+		netVel = objVel;
+
+		bodyPerc = objPos.y / planeYLimit;
+
+		if (objPos.y < planeYLimit) {
+			console.log('again');
+			requestAnimationFrame(simulate);
+		}
+	}
+
+	// Graphics
 
 	onMount(() => {
 		context = canvas.getContext('2d')!;
@@ -82,29 +153,28 @@
 		// Body
 		const bodySz = 20;
 		const bodyPoint = new Vector(
-			startingPoint.x + lenOfPlanePx * bodyPerc * Math.cos(angleRad),
-			startingPoint.y - lenOfPlanePx * bodyPerc * Math.sin(angleRad)
+			startingPoint.x + lenOfPlanePx * (1-bodyPerc) * Math.cos(angleRad),
+			startingPoint.y - lenOfPlanePx * (1-bodyPerc) * Math.sin(angleRad)
 		);
 
 		context.beginPath();
 		context.translate(bodyPoint.x, bodyPoint.y);
 		context.rotate(Math.PI - angleRad);
-		context.rect(-bodySz/2, bodySz/4, bodySz, bodySz );
+		context.rect(-bodySz / 2, bodySz / 4, bodySz, bodySz);
 		context.fillStyle = 'orange';
 		context.fill();
 		context.setTransform(1, 0, 0, 1, 0, 0);
 	}
-
 </script>
 
 <main>
 	<header>
 		<h1>Inclined plane</h1>
-		<p>This inclined plane simulation lets users explore
-		how objects move on slopes. They can adjust friction and
-		applied force to see how these affect the object's motion,
-		providing a straightforward way to understand inclined plane
-		mechanics.</p>
+		<p>
+			This inclined plane simulation lets users explore how objects move on slopes. They can adjust
+			friction and applied force to see how these affect the object's motion, providing a
+			straightforward way to understand inclined plane mechanics.
+		</p>
 	</header>
 	<section>
 		<h2>Inclined plane</h2>
@@ -165,10 +235,35 @@
 				id="ip-sf">Kinetic</NumField
 			>
 		</div>
+		<hr />
+		<h2>Forces</h2>
+		<div class="input-cluster">
+			<NumField
+				min={0}
+				step={0.1}
+				bind:value={_forceX}
+				placeholder="x"
+				id="ip-f-x">x</NumField
+			>
+			<NumField
+				min={0}
+				step={0.1}
+				bind:value={_forceY}
+				placeholder="y friction coeff"
+				id="ip-f-y">y</NumField
+			>
+		</div>
+	</section>
+
+	<section>
+		<p><b class="lbl">Acceleration:</b> {JSON.stringify(netAcceleration)}</p>
+		<p><b class="lbl">Velocity:</b> {JSON.stringify(netVel)}</p>
+		<p><b class="lbl">Time:</b> {JSON.stringify(t)}</p>
 	</section>
 
 	<section>
 		<canvas width={300} height={300} bind:this={canvas} />
+		<button on:click={play}>play</button>
 	</section>
 </main>
 
