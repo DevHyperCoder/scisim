@@ -17,7 +17,6 @@
 
 	$: tension = parseFloat(((2 * m1 * m2 * g) / (m1 + m2)).toFixed(5));
 	$: a = parseFloat(((m1 * g - tension) / m1).toFixed(5));
-	//	$: totalTime =
 
 	$: um1 = u_apply === 'm1' ? u : -u;
 	$: um2 = u_apply === 'm2' ? u : -u;
@@ -31,46 +30,6 @@
 		ready = true;
 	});
 
-	let totalTime: number = Infinity;
-
-	function quadraticRoot(a: number, b: number, c: number) {
-		const alpha = (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-		const beta = (-b - Math.sqrt(b * b - 4 * a * c)) / (2 * a);
-		return [alpha, beta];
-	}
-
-	$: {
-		// Total time it will take for the whole thing
-		// It will be the time it takes any one of the mass to hit to pully (y perc = 0)
-		// lets code it!
-
-		// a < 0 => mass 1 will hit the pully
-		if (a < 0) {
-			//f(t) = (abs(a)*t^2)/2 + um1*t - m1y
-			//find_zero(f, 0.0)
-			const roots = quadraticRoot(Math.abs(a) / 2, um1, -initial_m1y);
-			totalTime = Math.max(...roots.map(Math.abs));
-		}
-		// a > 0 => mass 2 will hit the pully
-		else if (a > 0) {
-			//f(t) = (abs(a)*t^2)/2 + um2*t + m2y
-			const roots = quadraticRoot(Math.abs(a) / 2, um2, +initial_m2y);
-			totalTime = Math.max(...roots.map(Math.abs));
-		}
-		// a = 0 : Either mass1 or mass2 could hit the pulley, depending on the initial velocities
-		// if both are 0, the system will be at rest => time to hit pully = Inf
-		else {
-			const tm1 = initial_m1y / um1;
-			const tm2 = initial_m2y / um2;
-			totalTime = Math.min(Math.abs(tm1), Math.abs(tm2));
-		}
-	}
-
-	// 0 - 100
-	let timePerc = 0;
-	$: t = (totalTime * timePerc) / 100;
-	$: sim_m1 = initial_m1y + um1 * t + (a * t * t) / 2;
-	$: sim_m2 = initial_m2y + um2 * t + (-a * t * t) / 2;
 	$: if (ready) draw(sim_m1, sim_m2);
 
 	function draw(m1YP: number, m2YP: number) {
@@ -121,20 +80,44 @@
 		ctx.stroke();
 	}
 
+	let sim_m1 = initial_m1y;
+	let sim_m2 = initial_m2y;
+	let v_m1 = um1;
+	let v_m2 = um2;
+	let t = 0;
+
 	// Animation
 	let previous: number;
 
-	function animate(timestamp: number) {
-		let anim_t = Math.min(t + (timestamp - previous) / 1000, totalTime);
-		timePerc = (100 * anim_t) / totalTime;
-		previous = timestamp;
+	function valContraint(v: number, min: number, max: number) {
+		return Math.min(max, Math.max(v, min));
+	}
 
-		if (t < totalTime) {
-			requestAnimationFrame(animate);
+	function animate(timestamp: number) {
+		const elapsedMS = timestamp - previous;
+		previous = timestamp;
+		const dt = elapsedMS / 1000;
+		t += dt;
+
+		v_m1 += a * dt;
+		v_m2 += -a * dt;
+
+		sim_m1 = valContraint(sim_m1 + v_m1, 0, 100);
+		sim_m2 = valContraint(sim_m2 + v_m2, 0, 100);
+
+		// Stop animation once at extreme points
+		if (sim_m1 === 0 || sim_m2 === 0 || sim_m1 === 100 || sim_m2 === 100) {
+			return;
 		}
+
+		requestAnimationFrame(animate);
 	}
 
 	function startAnimation() {
+		sim_m1 = initial_m1y;
+		sim_m2 = initial_m2y;
+		v_m1 = um1;
+		v_m2 = um2;
 		t = 0;
 		requestAnimationFrame((timestamp) => {
 			previous = timestamp;
@@ -196,25 +179,14 @@
 		<li>+ direction downwards.</li>
 	</ul>
 	<section id="calculations">
-		<p><b class="lbl">Tension:</b> {tension.toPrecision(4)}</p>
-		<p><b class="lbl">Acceleration:</b> {a.toPrecision(4)}</p>
-
-		<div id="accel-text">
-			{#if a === 0}
-				<p>No acceleration</p>
-			{:else}
-				<p>Heavier mass is moving down with a acceleration of {Math.abs(a).toPrecision(4)}</p>
-				<div class="flex gap-2 pb-0">
-					<p class="border-r-black border-r-2 pr-2">
-						<b class="lbl">Mass 1:</b>
-						{a < 0 ? 'Up' : 'Down'}
-					</p>
-					<p><b class="lbl">Mass 2:</b> {a > 0 ? 'Up' : 'Down'}</p>
-				</div>
-			{/if}
-		</div>
-
-		<p class="mt-2"><b class="lbl">Total time taken:</b> {totalTime.toPrecision(4)}s</p>
+		<p>
+			<b class="lbl">Tension:</b>
+			{tension.toPrecision(4)} <span class="text-slate-800 font-semibold">N</span>
+		</p>
+		<p>
+			<b class="lbl">Acceleration:</b>
+			{a.toPrecision(4)} <span class="text-slate-800 font-semibold">m/s<sup>2</sup></span>
+		</p>
 
 		<hr />
 
@@ -229,29 +201,17 @@
 	<section id="viz">
 		<h2>Visualisation</h2>
 		<canvas class="mx-auto" bind:this={canvas} width="200" height="200" />
-		<div class="flex flex-col mt-2">
-			<label for="time-perc">Time t ({t.toPrecision(4)}s)</label><input
-				id="time-perc"
-				type="range"
-				min="0"
-				max="100"
-				bind:value={timePerc}
-			/>
-		</div>
-
 		<button
 			class="mt-2 border border-black px-2 py-1"
 			on:click={() => {
 				startAnimation();
 			}}>Play</button
 		>
+		<p class="mt-2"><b class="lbl">Time:</b> {t.toPrecision(4)}s</p>
 	</section>
 </main>
 
 <style>
-	#accel-text {
-		@apply text-sm mt-2;
-	}
 	main {
 		@apply px-2 bg-yellow-200;
 	}
