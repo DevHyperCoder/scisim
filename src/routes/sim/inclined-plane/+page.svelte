@@ -2,7 +2,6 @@
 	import NumField from '$lib/NumField.svelte';
 	import { Vector } from '$lib/Vector';
 	import { onMount } from 'svelte';
-	import Layout from '../../+layout.svelte';
 
 	let angle = 70;
 	$: angleRad = (angle * Math.PI) / 180;
@@ -46,7 +45,7 @@
 
 	function play() {
 		console.log(objectLengthFromTop);
-		t=0.0;
+		t = 0.0;
 		objPos = new Vector(0.0, objectLengthFromTop);
 		objVel = Vector.ZERO();
 		requestAnimationFrame((t) => {
@@ -61,11 +60,11 @@
 		lastTimestamp = timestamp;
 		const elapsedMS = _elapsed / simSpeed;
 		const elapsedS = elapsedMS / 1000.0;
-		t+=elapsedS
+		t += elapsedS;
 
 		const mg = mass * gravity;
 		//const gravitationalForce = new Vector(mg * Math.sin(angleRad), mg * Math.cos(angleRad));
-		const gravitationalForce = new Vector(0, mg)
+		const gravitationalForce = new Vector(0, mg);
 
 		netForce = gravitationalForce.add(userForce);
 		const acceleration = netForce.multiply(1 / gravity);
@@ -81,7 +80,7 @@
 		const planeYLimit = planeLength * Math.sin(angleRad);
 		objPos.y = Math.min(planeYLimit, objPos.y);
 
-		const planeXCoord = objPos.y / Math.tan(angleRad)
+		const planeXCoord = objPos.y / Math.tan(angleRad);
 		objPos.x = Math.max(planeXCoord, objPos.x);
 
 		console.log({ objPos, elapsedMS });
@@ -153,8 +152,8 @@
 		// Body
 		const bodySz = 20;
 		const bodyPoint = new Vector(
-			startingPoint.x + lenOfPlanePx * (1-bodyPerc) * Math.cos(angleRad),
-			startingPoint.y - lenOfPlanePx * (1-bodyPerc) * Math.sin(angleRad)
+			startingPoint.x + lenOfPlanePx * (1 - bodyPerc) * Math.cos(angleRad),
+			startingPoint.y - lenOfPlanePx * (1 - bodyPerc) * Math.sin(angleRad)
 		);
 
 		context.beginPath();
@@ -238,19 +237,9 @@
 		<hr />
 		<h2>Forces</h2>
 		<div class="input-cluster">
-			<NumField
-				min={0}
-				step={0.1}
-				bind:value={_forceX}
-				placeholder="x"
-				id="ip-f-x">x</NumField
-			>
-			<NumField
-				min={0}
-				step={0.1}
-				bind:value={_forceY}
-				placeholder="y friction coeff"
-				id="ip-f-y">y</NumField
+			<NumField min={0} step={0.1} bind:value={_forceX} placeholder="x" id="ip-f-x">x</NumField>
+			<NumField min={0} step={0.1} bind:value={_forceY} placeholder="y friction coeff" id="ip-f-y"
+				>y</NumField
 			>
 		</div>
 	</section>
