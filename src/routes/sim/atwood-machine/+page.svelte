@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CopyButton from '$lib/CopyButton.svelte';
 	import FreeBodyDiagram from '$lib/FreeBodyDiagram.svelte';
 	import NumField from '$lib/NumField.svelte';
 	import {
@@ -33,7 +34,7 @@
 	let ctx: CanvasRenderingContext2D;
 	let ready = false;
 
-	$: if (ready) draw(sim_m1/(sim_m1+sim_m2), sim_m2 / (sim_m1+sim_m2));
+	$: if (ready) draw(sim_m1 / (sim_m1 + sim_m2), sim_m2 / (sim_m1 + sim_m2));
 
 	function draw(m1YP: number, m2YP: number) {
 		const height = 200;
@@ -107,13 +108,14 @@
 		const phyData = [];
 		phyData.push({ t, v: { v_m1, v_m2, sim_m2, sim_m1 } });
 
+		// eslint-disable-next-line no-constant-condition
 		while (true) {
 			v_m1 += a * dt;
 			v_m2 += -a * dt;
 
-			sim_m1 = valContraint(sim_m1 + v_m1*dt, 0, 100);
-			sim_m2 = valContraint(sim_m2 + v_m2*dt, 0, 100);
-			t+= dt;
+			sim_m1 = valContraint(sim_m1 + v_m1 * dt, 0, 100);
+			sim_m2 = valContraint(sim_m2 + v_m2 * dt, 0, 100);
+			t += dt;
 
 			// Stop animation once at extreme points
 			if (sim_m1 === 0 || sim_m2 === 0 || sim_m1 === 100 || sim_m2 === 100) {
@@ -131,13 +133,14 @@
 		const elapsedMS = Math.floor(timestamp - previous);
 		previous = timestamp;
 
-		count = Math.min(count+elapsedMS, atwood_chart_data.length-1);
-		const {v: {sim_m1: v1, sim_m2: v2}} = atwood_chart_data[count]
+		count = Math.min(count + elapsedMS, atwood_chart_data.length - 1);
+		const {
+			v: { sim_m1: v1, sim_m2: v2 }
+		} = atwood_chart_data[count];
 
 		sim_m2 = v2;
-		sim_m1 = v1
+		sim_m1 = v1;
 		t = count / 1000;
-
 
 		if (count < atwood_chart_data.length - 1) {
 			requestAnimationFrame(animate);
@@ -150,7 +153,7 @@
 		vel_time_chart.update('default');
 		pos_time_chart.data = thinga(atwood_chart_data);
 		pos_time_chart.update('default');
-		count = 0
+		count = 0;
 
 		requestAnimationFrame((timestamp) => {
 			previous = timestamp;
@@ -220,9 +223,9 @@
 			data: thing(atwood_chart_data),
 			options: {
 				elements: {
-				point: {
-				pointStyle: false,
-				},
+					point: {
+						pointStyle: false
+					}
 				},
 				scales: {
 					x: {
@@ -246,9 +249,9 @@
 			data: thinga(atwood_chart_data),
 			options: {
 				elements: {
-				point: {
-				pointStyle: false,
-				},
+					point: {
+						pointStyle: false
+					}
 				},
 				scales: {
 					x: {
@@ -284,12 +287,34 @@
 	</header>
 
 	<section id="inputs">
+		<div class="w-full flex justify-between mb-2 items-center">
+			<h2>Masses</h2>
+
+			<CopyButton data={{ m1, m2, g, input_initial_m1y, input_initial_m2y, u, u_apply }}>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					width="16"
+					height="16"
+					fill="currentColor"
+					class="bi bi-clipboard2-data"
+					viewBox="0 0 16 16"
+				>
+					<path
+						d="M9.5 0a.5.5 0 0 1 .5.5.5.5 0 0 0 .5.5.5.5 0 0 1 .5.5V2a.5.5 0 0 1-.5.5h-5A.5.5 0 0 1 5 2v-.5a.5.5 0 0 1 .5-.5.5.5 0 0 0 .5-.5.5.5 0 0 1 .5-.5z"
+					/>
+					<path
+						d="M3 2.5a.5.5 0 0 1 .5-.5H4a.5.5 0 0 0 0-1h-.5A1.5 1.5 0 0 0 2 2.5v12A1.5 1.5 0 0 0 3.5 16h9a1.5 1.5 0 0 0 1.5-1.5v-12A1.5 1.5 0 0 0 12.5 1H12a.5.5 0 0 0 0 1h.5a.5.5 0 0 1 .5.5v12a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5z"
+					/>
+					<path
+						d="M10 7a1 1 0 1 1 2 0v5a1 1 0 1 1-2 0zm-6 4a1 1 0 1 1 2 0v1a1 1 0 1 1-2 0zm4-3a1 1 0 0 0-1 1v3a1 1 0 1 0 2 0V9a1 1 0 0 0-1-1"
+					/>
+				</svg></CopyButton
+			>
+		</div>
+
 		<div class="input-cluster">
 			<NumField bind:value={m1} id="m1" min={1} placeholder="Mass of 1st object">Mass 1</NumField>
 			<NumField bind:value={m2} id="m2" min={1} placeholder="Mass of 2st object">Mass 2</NumField>
-			<NumField bind:value={g} id="g" min={1} placeholder="Gravity of the environment"
-				>Gravity</NumField
-			>
 		</div>
 
 		<hr />
@@ -313,6 +338,13 @@
 				<label class="ml-3" for="ua_m2">m2</label>
 				<input id="ua_m2" type="radio" bind:group={u_apply} value="m2" />
 			</div>
+		</div>
+		<hr />
+		<h2>World</h2>
+		<div class="input-cluster">
+			<NumField bind:value={g} id="g" min={1} placeholder="Gravity of the environment"
+				>Gravity</NumField
+			>
 		</div>
 	</section>
 
