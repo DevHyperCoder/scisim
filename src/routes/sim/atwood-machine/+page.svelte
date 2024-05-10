@@ -147,14 +147,34 @@
 		}
 	}
 
-	function startAnimation() {
-		atwood_chart_data = physics();
-		vel_time_chart.data = thing(atwood_chart_data);
-		vel_time_chart.update('default');
-		pos_time_chart.data = thinga(atwood_chart_data);
-		pos_time_chart.update('default');
-		count = 0;
+	$: {
+		m1;
+		m2;
+		g;
+		u;
+		u_apply;
+		input_initial_m1y;
+		input_initial_m2y;
+		atwood_chart_data = [];
+	}
 
+	$: {
+		if (ready) {
+			vel_time_chart.data = thing(atwood_chart_data);
+			vel_time_chart.update('default');
+			pos_time_chart.data = thinga(atwood_chart_data);
+			pos_time_chart.update('default');
+		}
+	}
+	let sim = false;
+	function simulate() {
+		sim = true;
+		atwood_chart_data = physics();
+		sim = false;
+	}
+
+	function startAnimation() {
+		count = 0;
 		requestAnimationFrame((timestamp) => {
 			previous = timestamp;
 			animate(timestamp);
@@ -378,6 +398,13 @@
 		<canvas class="mx-auto" bind:this={canvas} width="200" height="200" />
 		<button
 			class="mt-2 border border-black px-2 py-1"
+			on:click={() => {
+				simulate();
+			}}>Simulate</button
+		>
+		<button
+			class="mt-2 border border-black px-2 py-1 disabled:border-gray-400"
+			disabled={sim || atwood_chart_data.length < 0}
 			on:click={() => {
 				startAnimation();
 			}}>Play</button
