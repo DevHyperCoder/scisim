@@ -20,9 +20,6 @@
 	let input_initial_m1y = 60;
 	let input_initial_m2y = 30;
 
-	$: initial_m1y = (input_initial_m1y * 100) / (input_initial_m1y + input_initial_m2y);
-	$: initial_m2y = (input_initial_m2y * 100) / (input_initial_m1y + input_initial_m2y);
-
 	let u = 0;
 	let u_apply: 'm1' | 'm2' = 'm1';
 
@@ -36,7 +33,7 @@
 	let ctx: CanvasRenderingContext2D;
 	let ready = false;
 
-	$: if (ready) draw(sim_m1, sim_m2);
+	$: if (ready) draw(sim_m1/(sim_m1+sim_m2), sim_m2 / (sim_m1+sim_m2));
 
 	function draw(m1YP: number, m2YP: number) {
 		const height = 200;
@@ -57,8 +54,8 @@
 		const top0 = padding + 2 * pullyRad;
 		const top100 = height - padding - massRectH;
 
-		const mass1YPerc = m1YP / 100;
-		const mass2YPerc = m2YP / 100;
+		const mass1YPerc = m1YP;
+		const mass2YPerc = m2YP;
 
 		const m1Y = top0 + (top100 - top0) * mass1YPerc;
 		const m2Y = top0 + (top100 - top0) * mass2YPerc;
@@ -86,10 +83,8 @@
 		ctx.stroke();
 	}
 
-	let sim_m1 = initial_m1y;
-	let sim_m2 = initial_m2y;
-	let v_m1 = um1;
-	let v_m2 = um2;
+	let sim_m1 = input_initial_m1y;
+	let sim_m2 = input_initial_m2y;
 	let t = 0;
 
 	// Animation
@@ -99,39 +94,64 @@
 		return Math.min(max, Math.max(v, min));
 	}
 
-	function animate(timestamp: number) {
-		const elapsedMS = timestamp - previous;
-		previous = timestamp;
-		const dt = elapsedMS / 1000;
-		t += dt;
+	function physics() {
+		const stepMS = 1;
+		const dt = stepMS / 1000;
 
-		v_m1 += a * dt;
-		v_m2 += -a * dt;
+		let sim_m1 = input_initial_m1y;
+		let sim_m2 = input_initial_m2y;
+		let v_m1 = um1;
+		let v_m2 = um2;
+		let t = 0;
 
-		sim_m1 = valContraint(sim_m1 + v_m1, 0, 100);
-		sim_m2 = valContraint(sim_m2 + v_m2, 0, 100);
+		const phyData = [];
+		phyData.push({ t, v: { v_m1, v_m2, sim_m2, sim_m1 } });
 
-		// Stop animation once at extreme points
-		if (sim_m1 === 0 || sim_m2 === 0 || sim_m1 === 100 || sim_m2 === 100) {
-			return;
+		while (true) {
+			v_m1 += a * dt;
+			v_m2 += -a * dt;
+
+			sim_m1 = valContraint(sim_m1 + v_m1*dt, 0, 100);
+			sim_m2 = valContraint(sim_m2 + v_m2*dt, 0, 100);
+			t+= dt;
+
+			// Stop animation once at extreme points
+			if (sim_m1 === 0 || sim_m2 === 0 || sim_m1 === 100 || sim_m2 === 100) {
+				break;
+			}
+
+			phyData.push({ t, v: { v_m1, v_m2, sim_m2, sim_m1 } });
 		}
 
-		atwood_chart_data.push({ t, v: { v_m1, v_m2, sim_m2, sim_m1 } });
+		return phyData;
+	}
+
+	let count = 0;
+	function animate(timestamp: number) {
+		const elapsedMS = Math.floor(timestamp - previous);
+		previous = timestamp;
+
+		count = Math.min(count+elapsedMS, atwood_chart_data.length-1);
+		const {v: {sim_m1: v1, sim_m2: v2}} = atwood_chart_data[count]
+
+		sim_m2 = v2;
+		sim_m1 = v1
+		t = count / 1000;
+
+
+		if (count < atwood_chart_data.length - 1) {
+			requestAnimationFrame(animate);
+		}
+	}
+
+	function startAnimation() {
+		atwood_chart_data = physics();
 		vel_time_chart.data = thing(atwood_chart_data);
 		vel_time_chart.update('default');
 		pos_time_chart.data = thinga(atwood_chart_data);
 		pos_time_chart.update('default');
+		count = 0
 
-		requestAnimationFrame(animate);
-	}
-
-	function startAnimation() {
-		sim_m1 = initial_m1y;
-		sim_m2 = initial_m2y;
-		v_m1 = um1;
-		v_m2 = um2;
-		t = 0;
-		atwood_chart_data = [];
 		requestAnimationFrame((timestamp) => {
 			previous = timestamp;
 			animate(timestamp);
@@ -199,6 +219,11 @@
 			type: 'line',
 			data: thing(atwood_chart_data),
 			options: {
+				elements: {
+				point: {
+				pointStyle: false,
+				},
+				},
 				scales: {
 					x: {
 						title: {
@@ -220,6 +245,11 @@
 			type: 'line',
 			data: thinga(atwood_chart_data),
 			options: {
+				elements: {
+				point: {
+				pointStyle: false,
+				},
+				},
 				scales: {
 					x: {
 						title: {
