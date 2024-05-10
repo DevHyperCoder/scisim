@@ -1,6 +1,17 @@
 <script lang="ts">
 	import FreeBodyDiagram from '$lib/FreeBodyDiagram.svelte';
 	import NumField from '$lib/NumField.svelte';
+	import {
+		Chart,
+		CategoryScale,
+		LinearScale,
+		LineElement,
+		LineController,
+		PointElement,
+		Colors,
+		Tooltip,
+		Legend
+	} from 'chart.js';
 	import { onMount } from 'svelte';
 	let m1 = 1;
 	let m2 = 2;
@@ -24,11 +35,6 @@
 	let canvas: HTMLCanvasElement;
 	let ctx: CanvasRenderingContext2D;
 	let ready = false;
-
-	onMount(() => {
-		ctx = canvas.getContext('2d')!;
-		ready = true;
-	});
 
 	$: if (ready) draw(sim_m1, sim_m2);
 
@@ -110,6 +116,12 @@
 			return;
 		}
 
+		atwood_chart_data.push({ t, v: { v_m1, v_m2, sim_m2, sim_m1 } });
+		vel_time_chart.data = thing(atwood_chart_data);
+		vel_time_chart.update('default');
+		pos_time_chart.data = thinga(atwood_chart_data);
+		pos_time_chart.update('default');
+
 		requestAnimationFrame(animate);
 	}
 
@@ -119,11 +131,112 @@
 		v_m1 = um1;
 		v_m2 = um2;
 		t = 0;
+		atwood_chart_data = [];
 		requestAnimationFrame((timestamp) => {
 			previous = timestamp;
 			animate(timestamp);
 		});
 	}
+
+	function thing(time_data: AtwoodTimeData) {
+		return {
+			labels: time_data.map((row) => row.t.toPrecision(4)),
+			datasets: [
+				{
+					label: 'v_m1',
+					data: time_data.map((row) => row.v.v_m1)
+				},
+				{
+					label: 'v_m2',
+					data: time_data.map((row) => row.v.v_m2)
+				}
+			]
+		};
+	}
+	function thinga(time_data: AtwoodTimeData) {
+		return {
+			labels: time_data.map((row) => row.t.toPrecision(4)),
+			datasets: [
+				{
+					label: 'y_m1',
+					data: time_data.map((row) => row.v.sim_m1)
+				},
+				{
+					label: 'y_m2',
+					data: time_data.map((row) => row.v.sim_m2)
+				}
+			]
+		};
+	}
+
+	type TimeData<T> = { t: number; v: T }[];
+	type AtwoodTimeData = TimeData<{ sim_m1: number; sim_m2: number; v_m1: number; v_m2: number }>;
+
+	let velTimeChartCanvas: HTMLCanvasElement;
+	let vel_time_chart: Chart;
+
+	let posTimeChartCanvas: HTMLCanvasElement;
+	let pos_time_chart: Chart;
+
+	let atwood_chart_data: AtwoodTimeData = [];
+
+	onMount(() => {
+		ctx = canvas.getContext('2d')!;
+		ready = true;
+
+		Chart.register(
+			Tooltip,
+			Legend,
+			Colors,
+			LineElement,
+			LineController,
+			LinearScale,
+			CategoryScale,
+			PointElement
+		);
+
+		vel_time_chart = new Chart(velTimeChartCanvas as HTMLCanvasElement, {
+			type: 'line',
+			data: thing(atwood_chart_data),
+			options: {
+				scales: {
+					x: {
+						title: {
+							display: true,
+							text: 'Time'
+						}
+					},
+					y: {
+						title: {
+							display: true,
+							text: 'Velocity'
+						}
+					}
+				}
+			}
+		});
+
+		pos_time_chart = new Chart(posTimeChartCanvas as HTMLCanvasElement, {
+			type: 'line',
+			data: thinga(atwood_chart_data),
+			options: {
+				scales: {
+					x: {
+						title: {
+							display: true,
+							text: 'Time'
+						}
+					},
+					y: {
+						title: {
+							display: true,
+							text: 'Position'
+						}
+					}
+				}
+			}
+		});
+	});
 </script>
 
 <main>
@@ -208,5 +321,11 @@
 			}}>Play</button
 		>
 		<p class="mt-2"><b class="lbl">Time:</b> {t.toPrecision(4)}s</p>
+		<hr />
+		<h2>Velocity vs Time</h2>
+		<canvas bind:this={velTimeChartCanvas}></canvas>
+		<hr />
+		<h2>Position vs Time</h2>
+		<canvas bind:this={posTimeChartCanvas}></canvas>
 	</section>
 </main>
