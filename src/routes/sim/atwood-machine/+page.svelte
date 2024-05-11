@@ -2,6 +2,7 @@
 	import CopyButton from '$lib/CopyButton.svelte';
 	import FreeBodyDiagram from '$lib/FreeBodyDiagram.svelte';
 	import NumField from '$lib/NumField.svelte';
+	import QuantityDisplay from '$lib/QuantityDisplay.svelte';
 	import {
 		Chart,
 		CategoryScale,
@@ -374,14 +375,9 @@
 		<li>+ direction downwards.</li>
 	</ul>
 	<section id="calculations">
-		<p>
-			<b class="lbl">Tension:</b>
-			{tension.toPrecision(4)} <span class="text-slate-800 font-semibold">N</span>
-		</p>
-		<p>
-			<b class="lbl">Acceleration:</b>
-			{a.toPrecision(4)} <span class="text-slate-800 font-semibold">m/s<sup>2</sup></span>
-		</p>
+		<QuantityDisplay value={tension.toPrecision(4)} label="Tension" unit="N" />
+
+		<QuantityDisplay value={a.toPrecision(4)} label="Acceleration">m/s<sup>2</sup></QuantityDisplay>
 
 		<hr />
 
@@ -396,20 +392,22 @@
 	<section id="viz">
 		<h2>Visualisation</h2>
 		<canvas class="mx-auto" bind:this={canvas} width="200" height="200" />
-		<button
-			class="mt-2 border border-black px-2 py-1"
-			on:click={() => {
-				simulate();
-			}}>Simulate</button
-		>
-		<button
-			class="mt-2 border border-black px-2 py-1 disabled:border-gray-400"
-			disabled={sim || atwood_chart_data.length < 0}
-			on:click={() => {
-				startAnimation();
-			}}>Play</button
-		>
-		<p class="mt-2"><b class="lbl">Time:</b> {t.toPrecision(4)}s</p>
+		<div class="mb-2">
+			<button
+				class="border border-black px-2 py-1"
+				on:click={() => {
+					simulate();
+				}}>Simulate</button
+			>
+			<button
+				class="border border-black px-2 py-1 disabled:border-gray-400"
+				disabled={sim || atwood_chart_data.length < 0}
+				on:click={() => {
+					startAnimation();
+				}}>Play</button
+			>
+		</div>
+		<QuantityDisplay value={t.toPrecision(4)} label="Time" unit="s" />
 		<hr />
 		<h2>Velocity vs Time</h2>
 		<canvas bind:this={velTimeChartCanvas}></canvas>

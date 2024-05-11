@@ -1,5 +1,6 @@
 <script lang="ts">
 	import NumField from '$lib/NumField.svelte';
+	import QuantityDisplay from '$lib/QuantityDisplay.svelte';
 	import { Vector } from '$lib/Vector';
 	import { onMount } from 'svelte';
 
@@ -181,7 +182,6 @@
 <main>
 	<header>
 		<h1>Inclined Plane</h1>
-		<p>ast</p>
 	</header>
 
 	<section>
@@ -206,11 +206,16 @@
 		<p>{sim}</p>
 	</section>
 	<section>
+		<h2>Visualisation</h2>
 		<canvas height={300} width={300} bind:this={canvas}></canvas>
-		<p>{t}</p>
-		<p>{bodyVel.lenSquared()}</p>
-		<button on:click={simulate}>sim</button>
-		<button on:click={startAnimation}>ani</button>
+		<QuantityDisplay label="Time" value={t.toPrecision(4)} unit="s" />
+		<QuantityDisplay label="Velocity" value={bodyVel.len().toPrecision(4)} unit="m/s" />
+		<button class="border border-black px-2 py-1 disabled:border-gray-400" on:click={simulate}
+			>Simulate</button
+		>
+		<button class="border border-black px-2 py-1 disabled:border-gray-400" on:click={startAnimation}
+			>Animate</button
+		>
 	</section>
 </main>
 
