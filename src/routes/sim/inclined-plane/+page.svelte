@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Graph from '$components/Graph.svelte';
 	import NumField from '$components/NumField.svelte';
 	import QuantityDisplay from '$components/QuantityDisplay.svelte';
 	import { Vector } from '$lib/Vector';
@@ -177,6 +178,29 @@
 	}
 
 	let t = 0;
+
+	function simResultsToVTGraph(data: IPData[]) {
+		return {
+			labels: data.map((row) => row.t.toPrecision(4)),
+			datasets: [
+				{
+					label: 'v',
+					data: data.map((row) => Math.sqrt(row.bodyVel.x ** 2 + row.bodyVel.y ** 2))
+				}
+			]
+		};
+	}
+	function simResultsToYTGraph(data: IPData[]) {
+		return {
+			labels: data.map((row) => row.t.toPrecision(4)),
+			datasets: [
+				{
+					label: 'v',
+					data: data.map((row) => row.bodyPos.y)
+				}
+			]
+		};
+	}
 </script>
 
 <main>
@@ -216,6 +240,11 @@
 		<button class="border border-black px-2 py-1 disabled:border-gray-400" on:click={startAnimation}
 			>Animate</button
 		>
+
+		<h2>Velocity vs Time</h2>
+		<Graph xlabel="Time (s)" ylabel="Velocity (m/s)" data={simResultsToVTGraph(data)} />
+		<h2>Y position vs Time</h2>
+		<Graph xlabel="Time (s)" ylabel="y (m)" data={simResultsToYTGraph(data)} />
 	</section>
 </main>
 
