@@ -7,7 +7,7 @@ body {
 }
 
 main {
-	@apply px-2 bg-yellow-200;
+	@apply lg:px-48 px-2 bg-yellow-200;
 }
 h1 {
 	@apply font-bold text-xl tracking-wide text-center mb-3;
