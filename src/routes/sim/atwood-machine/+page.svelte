@@ -1,19 +1,9 @@
 <script lang="ts">
 	import CopyButton from '$components/CopyButton.svelte';
 	import FreeBodyDiagram from '$components/FreeBodyDiagram.svelte';
+	import Graph from '$components/Graph.svelte';
 	import NumField from '$components/NumField.svelte';
 	import QuantityDisplay from '$components/QuantityDisplay.svelte';
-	import {
-		Chart,
-		CategoryScale,
-		LinearScale,
-		LineElement,
-		LineController,
-		PointElement,
-		Colors,
-		Tooltip,
-		Legend
-	} from 'chart.js';
 	import { onMount } from 'svelte';
 	let m1 = 1;
 	let m2 = 2;
@@ -96,7 +86,7 @@
 		return Math.min(max, Math.max(v, min));
 	}
 
-	function physics() {
+	function physics(): AtwoodTimeData {
 		const stepMS = 1;
 		const dt = stepMS / 1000;
 
@@ -107,7 +97,7 @@
 		let t = 0;
 
 		const phyData = [];
-		phyData.push({ t, v: { v_m1, v_m2, sim_m2, sim_m1 } });
+		phyData.push({ t, v_m1, v_m2, sim_m2, sim_m1 });
 
 		// eslint-disable-next-line no-constant-condition
 		while (true) {
@@ -123,7 +113,7 @@
 				break;
 			}
 
-			phyData.push({ t, v: { v_m1, v_m2, sim_m2, sim_m1 } });
+			phyData.push({ t, v_m1, v_m2, sim_m2, sim_m1 });
 		}
 
 		return phyData;
@@ -134,16 +124,14 @@
 		const elapsedMS = Math.floor(timestamp - previous);
 		previous = timestamp;
 
-		count = Math.min(count + elapsedMS, atwood_chart_data.length - 1);
-		const {
-			v: { sim_m1: v1, sim_m2: v2 }
-		} = atwood_chart_data[count];
+		count = Math.min(count + elapsedMS, sim_results.length - 1);
+		const { sim_m1: v1, sim_m2: v2 } = sim_results[count];
 
 		sim_m2 = v2;
 		sim_m1 = v1;
 		t = count / 1000;
 
-		if (count < atwood_chart_data.length - 1) {
+		if (count < sim_results.length - 1) {
 			requestAnimationFrame(animate);
 		}
 	}
@@ -156,21 +144,13 @@
 		u_apply;
 		input_initial_m1y;
 		input_initial_m2y;
-		atwood_chart_data = [];
+		sim_results = [];
 	}
 
-	$: {
-		if (ready) {
-			vel_time_chart.data = thing(atwood_chart_data);
-			vel_time_chart.update('default');
-			pos_time_chart.data = thinga(atwood_chart_data);
-			pos_time_chart.update('default');
-		}
-	}
 	let sim = false;
 	function simulate() {
 		sim = true;
-		atwood_chart_data = physics();
+		sim_results = physics();
 		sim = false;
 	}
 
@@ -182,114 +162,44 @@
 		});
 	}
 
-	function thing(time_data: AtwoodTimeData) {
+	function timeDataToVTGraph(time_data: AtwoodTimeData) {
 		return {
 			labels: time_data.map((row) => row.t.toPrecision(4)),
 			datasets: [
 				{
 					label: 'v_m1',
-					data: time_data.map((row) => row.v.v_m1)
+					data: time_data.map((row) => row.v_m1)
 				},
 				{
 					label: 'v_m2',
-					data: time_data.map((row) => row.v.v_m2)
+					data: time_data.map((row) => row.v_m2)
 				}
 			]
 		};
 	}
-	function thinga(time_data: AtwoodTimeData) {
+	function timeDataToYTGraph(time_data: AtwoodTimeData) {
 		return {
 			labels: time_data.map((row) => row.t.toPrecision(4)),
 			datasets: [
 				{
 					label: 'y_m1',
-					data: time_data.map((row) => row.v.sim_m1)
+					data: time_data.map((row) => row.sim_m1)
 				},
 				{
 					label: 'y_m2',
-					data: time_data.map((row) => row.v.sim_m2)
+					data: time_data.map((row) => row.sim_m2)
 				}
 			]
 		};
 	}
 
-	type TimeData<T> = { t: number; v: T }[];
-	type AtwoodTimeData = TimeData<{ sim_m1: number; sim_m2: number; v_m1: number; v_m2: number }>;
+	type AtwoodTimeData = { t: number; sim_m1: number; sim_m2: number; v_m1: number; v_m2: number }[];
 
-	let velTimeChartCanvas: HTMLCanvasElement;
-	let vel_time_chart: Chart;
-
-	let posTimeChartCanvas: HTMLCanvasElement;
-	let pos_time_chart: Chart;
-
-	let atwood_chart_data: AtwoodTimeData = [];
+	let sim_results: AtwoodTimeData = [];
 
 	onMount(() => {
 		ctx = canvas.getContext('2d')!;
 		ready = true;
-
-		Chart.register(
-			Tooltip,
-			Legend,
-			Colors,
-			LineElement,
-			LineController,
-			LinearScale,
-			CategoryScale,
-			PointElement
-		);
-
-		vel_time_chart = new Chart(velTimeChartCanvas as HTMLCanvasElement, {
-			type: 'line',
-			data: thing(atwood_chart_data),
-			options: {
-				elements: {
-					point: {
-						pointStyle: false
-					}
-				},
-				scales: {
-					x: {
-						title: {
-							display: true,
-							text: 'Time'
-						}
-					},
-					y: {
-						title: {
-							display: true,
-							text: 'Velocity'
-						}
-					}
-				}
-			}
-		});
-
-		pos_time_chart = new Chart(posTimeChartCanvas as HTMLCanvasElement, {
-			type: 'line',
-			data: thinga(atwood_chart_data),
-			options: {
-				elements: {
-					point: {
-						pointStyle: false
-					}
-				},
-				scales: {
-					x: {
-						title: {
-							display: true,
-							text: 'Time'
-						}
-					},
-					y: {
-						title: {
-							display: true,
-							text: 'Position'
-						}
-					}
-				}
-			}
-		});
 	});
 </script>
 
@@ -401,7 +311,7 @@
 			>
 			<button
 				class="border border-black px-2 py-1 disabled:border-gray-400"
-				disabled={sim || atwood_chart_data.length < 0}
+				disabled={sim || sim_results.length < 0}
 				on:click={() => {
 					startAnimation();
 				}}>Play</button
@@ -410,9 +320,9 @@
 		<QuantityDisplay value={t.toPrecision(4)} label="Time" unit="s" />
 		<hr />
 		<h2>Velocity vs Time</h2>
-		<canvas bind:this={velTimeChartCanvas}></canvas>
+		<Graph xlabel="Time (s)" ylabel="Velocity (m/s)" data={timeDataToVTGraph(sim_results)} />
 		<hr />
 		<h2>Position vs Time</h2>
-		<canvas bind:this={posTimeChartCanvas}></canvas>
+		<Graph xlabel="Time (s)" ylabel="Position (m)" data={timeDataToYTGraph(sim_results)} />
 	</section>
 </main>
