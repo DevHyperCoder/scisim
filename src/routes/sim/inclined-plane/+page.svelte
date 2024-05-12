@@ -1,6 +1,6 @@
 <script lang="ts">
-	import NumField from '$lib/NumField.svelte';
-	import QuantityDisplay from '$lib/QuantityDisplay.svelte';
+	import NumField from '$components/NumField.svelte';
+	import QuantityDisplay from '$components/QuantityDisplay.svelte';
 	import { Vector } from '$lib/Vector';
 	import { onMount } from 'svelte';
 

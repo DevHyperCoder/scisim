@@ -1,8 +1,8 @@
 <script lang="ts">
-	import CopyButton from '$lib/CopyButton.svelte';
-	import FreeBodyDiagram from '$lib/FreeBodyDiagram.svelte';
-	import NumField from '$lib/NumField.svelte';
-	import QuantityDisplay from '$lib/QuantityDisplay.svelte';
+	import CopyButton from '$components/CopyButton.svelte';
+	import FreeBodyDiagram from '$components/FreeBodyDiagram.svelte';
+	import NumField from '$components/NumField.svelte';
+	import QuantityDisplay from '$components/QuantityDisplay.svelte';
 	import {
 		Chart,
 		CategoryScale,

@@ -6,6 +6,9 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
+		alias: {
+			$components: './src/lib/components'
+		},
 		adapter: adapter({
 			pages: 'build',
 			assets: 'build',
