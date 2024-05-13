@@ -38,6 +38,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"chart.js": "^4.4.2"
+		"chart.js": "^4.4.2",
+		"mathjs": "^12.4.2"
 	}
 }

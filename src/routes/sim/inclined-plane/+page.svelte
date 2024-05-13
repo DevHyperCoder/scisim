@@ -1,8 +1,10 @@
 <script lang="ts">
 	import Graph from '$components/Graph.svelte';
+	import MathField from '$components/MathField.svelte';
 	import NumField from '$components/NumField.svelte';
 	import QuantityDisplay from '$components/QuantityDisplay.svelte';
 	import { Vector } from '$lib/Vector';
+	import type { EvalFunction } from 'mathjs';
 	import { onMount } from 'svelte';
 
 	let planeLength: number = 1;
@@ -12,8 +14,11 @@
 	let mass = 1;
 	let gravity = 10;
 
-	let sF = 0;
-	let kF = 0.4;
+	let sF = '0.0';
+	let kF = '0.4';
+
+	let staticFricFn: EvalFunction;
+	let kineticFricFn: EvalFunction;
 
 	let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D;
@@ -103,6 +108,9 @@
 
 		// eslint-disable-next-line no-constant-condition
 		while (true) {
+			const sF = staticFricFn.evaluate({ t });
+			const kF = kineticFricFn.evaluate({ t });
+
 			const velAlongPlane = bodyVel.len();
 
 			let fricAcclAlongPlane = 0;
@@ -217,10 +225,18 @@
 			<NumField min={0} bind:value={planeLength} id="len">Plane Length</NumField>
 		</div>
 		<hr />
-		<h2>Friction</h2>
+		<!--
+		<h2>Friction [OLD]</h2>
 		<div class="input-cluster">
 			<NumField min={0} step={0.1} bind:value={sF} id="sF">Static Friction</NumField>
 			<NumField min={0} step={0.1} bind:value={kF} id="kF">Kinetic Friction</NumField>
+		</div>
+		-->
+		<h2>Friction [NEW]</h2>
+		<div class="input-cluster">
+			<MathField bind:fn={staticFricFn} step={0.1} initial={sF} id="sF">Static Friction</MathField>
+			<MathField bind:fn={kineticFricFn} step={0.1} initial={kF} id="kF">Kinetic Friction</MathField
+			>
 		</div>
 		<hr />
 		<h2>World</h2>
