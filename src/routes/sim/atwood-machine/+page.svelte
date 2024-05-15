@@ -318,7 +318,8 @@
 			>
 		</div>
 		<QuantityDisplay value={t.toPrecision(4)} label="Time" unit="s" />
-		<hr />
+	</section>
+	<section>
 		<h2>Velocity vs Time</h2>
 		<Graph xlabel="Time (s)" ylabel="Velocity (m/s)" data={timeDataToVTGraph(sim_results)} />
 		<hr />

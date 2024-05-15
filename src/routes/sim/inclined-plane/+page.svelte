@@ -152,11 +152,8 @@
 
 		return data;
 	}
-	let sim = false;
 	function simulate() {
-		sim = true;
 		data = physics();
-		sim = false;
 	}
 
 	let previous: number;
@@ -243,7 +240,6 @@
 		<div class="input-cluster">
 			<NumField min={0} bind:value={gravity} id="gravity">Gravity</NumField>
 		</div>
-		<p>{sim}</p>
 	</section>
 	<section>
 		<h2>Visualisation</h2>
@@ -256,9 +252,11 @@
 		<button class="border border-black px-2 py-1 disabled:border-gray-400" on:click={startAnimation}
 			>Animate</button
 		>
-
+	</section>
+	<section>
 		<h2>Velocity vs Time</h2>
 		<Graph xlabel="Time (s)" ylabel="Velocity (m/s)" data={simResultsToVTGraph(data)} />
+		<hr />
 		<h2>Y position vs Time</h2>
 		<Graph xlabel="Time (s)" ylabel="y (m)" data={simResultsToYTGraph(data)} />
 	</section>
