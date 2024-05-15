@@ -200,7 +200,10 @@
 	onMount(() => {
 		ctx = canvas.getContext('2d')!;
 		ready = true;
+		MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
 	});
+
+	let isTheoryExpanded = true;
 </script>
 
 <main>
@@ -284,10 +287,59 @@
 		<li>Rope and pully are massless.</li>
 		<li>+ direction downwards.</li>
 	</ul>
+
+	<section>
+		<div class="flex justify-between">
+			<h2>Theory</h2>
+			<button class="text-sm" on:click={() => {isTheoryExpanded = !isTheoryExpanded; 
+
+		MathJax.Hub.Queue(["Typeset",MathJax.Hub]);
+			}}>{isTheoryExpanded ? 'Collapse' : 'Expand'}</button>
+		</div>
+
+		{#if isTheoryExpanded}
+		<p>
+			A Atwood Machine consists of 2 masses connected through a rope that passes over a pulley. Each
+			mass has 2 forces acting on it - the force of gravity and the <a
+				href="https://en.wikipedia.org/wiki/Tension_(physics)">tension</a
+			>
+			of the string. These 2 forces act on the opposite direction, gravity tries to pull the mass down,
+			the tension force always tries to pull the mass up (remember: tension doesn't push)
+		</p>
+
+		<br />
+		<p>
+			Since a massless and inextensible string is assumed, the tension at all points on the rope
+			remains constant. Also, since the length of the string will be constant, both the masses will
+			have equal and opposite acceleration and velocity at all points.
+		</p>
+		<br />
+
+		<p> Lets assume the acceleration for \(m_1\) is downwards, then the acceleration for \(m_2\) will be upwards. The equations of motion will be:
+
+$$m_1a = m_1g - T$$
+$$m_2a = T - m_2g$$
+
+Solving for T, 
+
+{`$$T = \\frac{2 m_1 m_2 g}{m_1 + m_2}$$`}
+Using \(T\) in the equation for \(m_1\)
+
+{`$$a = \\frac{m_1 g - T}{m_1}$$`}
+
+		</p>
+		<br>
+		<p>
+		If \(a\) = 0, the system may be at rest or moving with constant velocity (if the initial velocity \(u \ne 0\) )
+		</p>
+
+	{/if}
+	</section>
+
 	<section id="calculations">
 		<QuantityDisplay value={tension.toPrecision(4)} label="Tension" unit="N" />
 
-		<QuantityDisplay value={a.toPrecision(4)} label="Acceleration">m/s<sup>2</sup></QuantityDisplay>
+		<QuantityDisplay value={a.toPrecision(4)} label="Acceleration for m1">m/s<sup>2</sup></QuantityDisplay>
 
 		<hr />
 
