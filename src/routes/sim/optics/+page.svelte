@@ -35,6 +35,8 @@
 			<NumField
 				id="incident-angle"
 				placeholder="angle of the incident ray to the normal"
+				min={-90}
+				max={90}
 				bind:value={incidentAngleDegrees}>Incident angle</NumField
 			>
 
