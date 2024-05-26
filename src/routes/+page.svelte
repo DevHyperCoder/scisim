@@ -7,6 +7,9 @@
 	<p>This is a collection of a few simulations I made</p>
 
 	<div class="grid grid-cols-1 gap-4">
+		<SimulationCard name="Optics" id="optics">
+			<p>Simulation of optical phenomenon like reflection, refraction.</p>
+		</SimulationCard>
 		<SimulationCard name="Atwood Machine" id="atwood-machine">
 			<p>
 				Simulation of a mass-pulley system where you can adjust the mass (and velocity) of the
