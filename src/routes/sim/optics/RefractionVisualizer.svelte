@@ -6,6 +6,8 @@
 
 	let ia_apply: 'surface' | 'normal' = 'normal';
 
+	let surfaceAngleDegrees = 0;
+	$: surfaceAngleRad = (surfaceAngleDegrees * Math.PI) / 180;
 	let incidentAngleDegrees: number = 60;
 
 	$: incidentWithNormalDegrees =
@@ -29,53 +31,63 @@
 
 	$: {
 		if (ready) {
-			draw(incidentWithNormalRad, r, n1, n2);
+			draw(surfaceAngleRad, incidentWithNormalRad, r, n1, n2);
 		}
 	}
 
-	function draw(incidentWithNormalRad: number, r: number, n1: number, n2: number) {
+	function draw(
+		surfaceAngleRad: number,
+		incidentWithNormalRad: number,
+		r: number,
+		n1: number,
+		n2: number
+	) {
 		const width = 400;
 		const height = 400;
-		const padding = 50;
+		const padding = 10;
 		context.fillStyle = 'black';
 		context.fillRect(0, 0, width, height);
 
+		const canvasMidpoint = new Vector(width / 2, height / 2);
+		context.translate(canvasMidpoint.x, canvasMidpoint.y);
+		context.rotate(-surfaceAngleRad);
+
+		// Coloured boxes
 		context.fillStyle = n1 > n2 ? 'pink' : 'lightblue';
-		context.fillRect(padding, padding, width - 2 * padding, (height - 2 * padding) / 2);
+		context.fillRect(
+			-(width - 2 * padding) / 2,
+			-(height - 2 * padding) / 2,
+			width - 2 * padding,
+			(height - 2 * padding) / 2
+		);
 		context.fillStyle = n2 > n1 ? 'pink' : 'lightblue';
-		context.fillRect(padding, height / 2, width - 2 * padding, (height - 2 * padding) / 2);
+		context.fillRect(
+			-(width - 2 * padding) / 2,
+			0,
+			width - 2 * padding,
+			(height - 2 * padding) / 2
+		);
 
 		// Drawing refraction surface
 
-		const surfaceAngleRad = 0;
+		context.lineWidth = 3;
+		context.strokeStyle = 'red';
 
-		//		context.lineWidth = 2;
-		//		context.strokeStyle = 'red';
-		//
-		const canvasMidpoint = new Vector(width / 2, height / 2);
-		//		context.beginPath();
-		//		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
-		//		context.lineTo(
-		//			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(surfaceAngleRad),
-		//			canvasMidpoint.y - ((height - padding) / 2) * Math.sin(surfaceAngleRad)
-		//		);
-		//		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
-		//		context.lineTo(
-		//			canvasMidpoint.x - ((width - padding) / 2) * Math.cos(surfaceAngleRad),
-		//			canvasMidpoint.y + ((height - padding) / 2) * Math.sin(surfaceAngleRad)
-		//		);
-		//		context.stroke();
+		context.beginPath();
+		context.moveTo(-(width - 2 * padding) / 2, 0);
+		context.lineTo((width - 2 * padding) / 2, 0);
+		context.stroke();
 
 		// Drawing incident
 		context.lineWidth = 2;
 		context.strokeStyle = 'yellow';
 
-		const iangle = surfaceAngleRad - incidentWithNormalRad - Math.PI / 2;
+		const iangle = -incidentWithNormalRad - Math.PI / 2;
 		context.beginPath();
-		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
+		context.moveTo(0, 0);
 		context.lineTo(
-			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(iangle),
-			canvasMidpoint.y + ((width - padding) / 2) * Math.sin(iangle)
+			((width - padding) / 2) * Math.cos(iangle),
+			((width - padding) / 2) * Math.sin(iangle)
 		);
 		context.stroke();
 
@@ -83,12 +95,12 @@
 		context.lineWidth = 2;
 		context.strokeStyle = 'blue';
 
-		const rangle = surfaceAngleRad - r - (3 * Math.PI) / 2;
+		const rangle = -r - (3 * Math.PI) / 2;
 		context.beginPath();
-		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
+		context.moveTo(0, 0);
 		context.lineTo(
-			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(rangle),
-			canvasMidpoint.y + ((width - padding) / 2) * Math.sin(rangle)
+			((width - padding) / 2) * Math.cos(rangle),
+			((width - padding) / 2) * Math.sin(rangle)
 		);
 		context.stroke();
 
@@ -96,17 +108,19 @@
 		context.strokeStyle = 'green';
 
 		context.beginPath();
-		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
+		context.moveTo(0, 0);
 		context.lineTo(
-			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(-Math.PI / 2),
-			canvasMidpoint.y + ((width - padding) / 2) * Math.sin(-Math.PI / 2)
+			((width - 2 * padding) / 2) * Math.cos(-Math.PI / 2),
+			((width - 2 * padding) / 2) * Math.sin(-Math.PI / 2)
 		);
-		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
+		context.moveTo(0, 0);
 		context.lineTo(
-			canvasMidpoint.x + ((width - padding) / 2) * Math.cos((-3 * Math.PI) / 2),
-			canvasMidpoint.y + ((width - padding) / 2) * Math.sin((-3 * Math.PI) / 2)
+			((width - 2 * padding) / 2) * Math.cos((-3 * Math.PI) / 2),
+			((width - 2 * padding) / 2) * Math.sin((-3 * Math.PI) / 2)
 		);
 		context.stroke();
+
+		context.setTransform(1, 0, 0, 1, 0, 0);
 	}
 </script>
 
@@ -117,6 +131,14 @@
 	<h2>Inputs</h2>
 
 	<div class="input-cluster">
+		<NumField
+			id="surface-angle"
+			min={-90}
+			max={90}
+			placeholder="surface angle"
+			bind:value={surfaceAngleDegrees}>Surface angle</NumField
+		>
+
 		<NumField
 			min={1}
 			step={0.1}
@@ -161,6 +183,7 @@
 			<hr />
 			<p>Legend:</p>
 			<ul>
+				<li><span class="bg-[red]"></span>Medium interface</li>
 				<li><span class="bg-[pink]"></span> Denser Medium</li>
 				<li><span class="bg-[lightblue]"></span> Lighter Medium</li>
 				<li><span class="bg-[green]"></span> Normal</li>
