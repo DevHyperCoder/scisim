@@ -14,8 +14,20 @@
 		ia_apply === 'normal' ? incidentAngleDegrees : 90 - incidentAngleDegrees;
 	$: incidentWithNormalRad = (incidentWithNormalDegrees * Math.PI) / 180;
 
-	$: r = Math.asin(Math.sin(incidentWithNormalRad) / (n2 / n1));
+	$: r = calculateR(incidentWithNormalRad, n1, n2);
 	$: rDegrees = (r * 180) / Math.PI;
+
+	function calculateR(incidentWithNormalRad: number, n1: number, n2: number) {
+		const i_c = Math.asin(n2 / n1);
+
+		if (incidentWithNormalRad > i_c) {
+			return Math.PI - incidentWithNormalRad;
+		} else if (incidentWithNormalRad == i_c) {
+			return Math.PI / 2;
+		} else {
+			return Math.asin(Math.sin(incidentWithNormalRad) / (n2 / n1));
+		}
+	}
 
 	let n1: number = 1.0;
 	let n2: number = 1.5;
@@ -85,6 +97,30 @@
 			context.moveTo(0, 0);
 			context.lineTo(width / 2, height / 2);
 			context.stroke();
+
+			const perc = 0.5;
+
+			const x = (width / 2) * perc;
+			const y = (height / 2) * perc;
+			const angle = Math.PI / 6;
+			const ll = 15;
+
+			withinContext(context, (context) => {
+				context.translate(x, y);
+				context.lineWidth = 4;
+
+				context.rotate(angle);
+				context.beginPath();
+				context.moveTo(0, 0);
+				context.lineTo(ll, ll);
+				context.stroke();
+
+				context.rotate(-2 * angle);
+				context.beginPath();
+				context.moveTo(0, 0);
+				context.lineTo(ll, ll);
+				context.stroke();
+			});
 		});
 
 		// Drawing refracted
@@ -98,6 +134,30 @@
 			context.moveTo(0, 0);
 			context.lineTo(width / 2, height / 2);
 			context.stroke();
+
+			const perc = 0.5;
+
+			const x = (width / 2) * perc;
+			const y = (height / 2) * perc;
+			const angle = Math.PI - Math.PI / 6;
+			const ll = 15;
+
+			withinContext(context, (context) => {
+				context.translate(x, y);
+				context.lineWidth = 4;
+
+				context.rotate(angle);
+				context.beginPath();
+				context.moveTo(0, 0);
+				context.lineTo(ll, ll);
+				context.stroke();
+
+				context.rotate(-2 * angle);
+				context.beginPath();
+				context.moveTo(0, 0);
+				context.lineTo(ll, ll);
+				context.stroke();
+			});
 		});
 
 		// Drawing Normal
@@ -175,6 +235,12 @@
 			<br />
 			{@html math(`\\angle r = ${rDegrees.toPrecision(4)} \\degree`)}
 			<hr />
+
+			<!-- TIR -->
+			{#if n1 > n2}
+				{@html math(`\\theta_c = ${(Math.asin(n2/n1) * 180/ Math.PI).toPrecision(4)} \\degree`)}
+			{/if}
+
 			<p>Legend:</p>
 			<ul>
 				<li><span class="bg-[red]"></span>Medium interface</li>
