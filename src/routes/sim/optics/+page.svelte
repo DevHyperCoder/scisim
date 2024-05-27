@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ReflectionVisualizer from './ReflectionVisualizer.svelte';
+	import RefractionVisualizer from './RefractionVisualizer.svelte';
 </script>
 
 <main>
@@ -9,6 +10,7 @@
 	</header>
 
 	<ReflectionVisualizer />
+	<RefractionVisualizer />
 </main>
 
 <style>
