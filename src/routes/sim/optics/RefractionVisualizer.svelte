@@ -1,5 +1,5 @@
 <script lang="ts">
-import{ math} from "mathlifier";
+	import { math } from 'mathlifier';
 	import { onMount } from 'svelte';
 	import { Vector } from '$lib/Vector';
 	import NumField from '$components/NumField.svelte';
@@ -10,10 +10,10 @@ import{ math} from "mathlifier";
 
 	$: incidentWithNormalDegrees =
 		ia_apply === 'normal' ? incidentAngleDegrees : 90 - incidentAngleDegrees;
-	$: incidentWithNormalRad = ((incidentWithNormalDegrees) * Math.PI) / 180;
+	$: incidentWithNormalRad = (incidentWithNormalDegrees * Math.PI) / 180;
 
-	$: r = Math.asin(Math.sin(incidentWithNormalRad) /  (n2 / n1));
-	$: rDegrees = r * 180 / Math.PI
+	$: r = Math.asin(Math.sin(incidentWithNormalRad) / (n2 / n1));
+	$: rDegrees = (r * 180) / Math.PI;
 
 	let n1: number = 1.0;
 	let n2: number = 1.5;
@@ -33,83 +33,80 @@ import{ math} from "mathlifier";
 		}
 	}
 
-	function draw(incidentWithNormalRad: number,r: number, n1: number, n2: number) {
-
-
+	function draw(incidentWithNormalRad: number, r: number, n1: number, n2: number) {
 		const width = 400;
 		const height = 400;
 		const padding = 50;
 		context.fillStyle = 'black';
 		context.fillRect(0, 0, width, height);
 
-		context.fillStyle = n1 > n2 ? "pink" : "lightblue"
-		context.fillRect(padding, padding,width-2*padding, (height-2*padding)/2);
-		context.fillStyle = n2 > n1 ? "pink" : "lightblue"
-		context.fillRect(padding, height/2,width-2*padding, (height-2*padding)/2);
+		context.fillStyle = n1 > n2 ? 'pink' : 'lightblue';
+		context.fillRect(padding, padding, width - 2 * padding, (height - 2 * padding) / 2);
+		context.fillStyle = n2 > n1 ? 'pink' : 'lightblue';
+		context.fillRect(padding, height / 2, width - 2 * padding, (height - 2 * padding) / 2);
 
 		// Drawing refraction surface
 
 		const surfaceAngleRad = 0;
 
-//		context.lineWidth = 2;
-//		context.strokeStyle = 'red';
-//
+		//		context.lineWidth = 2;
+		//		context.strokeStyle = 'red';
+		//
 		const canvasMidpoint = new Vector(width / 2, height / 2);
-//		context.beginPath();
-//		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
-//		context.lineTo(
-//			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(surfaceAngleRad),
-//			canvasMidpoint.y - ((height - padding) / 2) * Math.sin(surfaceAngleRad)
-//		);
-//		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
-//		context.lineTo(
-//			canvasMidpoint.x - ((width - padding) / 2) * Math.cos(surfaceAngleRad),
-//			canvasMidpoint.y + ((height - padding) / 2) * Math.sin(surfaceAngleRad)
-//		);
-//		context.stroke();
+		//		context.beginPath();
+		//		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
+		//		context.lineTo(
+		//			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(surfaceAngleRad),
+		//			canvasMidpoint.y - ((height - padding) / 2) * Math.sin(surfaceAngleRad)
+		//		);
+		//		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
+		//		context.lineTo(
+		//			canvasMidpoint.x - ((width - padding) / 2) * Math.cos(surfaceAngleRad),
+		//			canvasMidpoint.y + ((height - padding) / 2) * Math.sin(surfaceAngleRad)
+		//		);
+		//		context.stroke();
 
 		// Drawing incident
 		context.lineWidth = 2;
 		context.strokeStyle = 'yellow';
 
-		const iangle = surfaceAngleRad - incidentWithNormalRad - Math.PI/2
+		const iangle = surfaceAngleRad - incidentWithNormalRad - Math.PI / 2;
 		context.beginPath();
 		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
 		context.lineTo(
-			canvasMidpoint.x + ((width-padding)/2) * Math.cos(iangle),
-			canvasMidpoint.y + ((width-padding)/2) * Math.sin(iangle),
-		)
-		context.stroke()
-
+			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(iangle),
+			canvasMidpoint.y + ((width - padding) / 2) * Math.sin(iangle)
+		);
+		context.stroke();
 
 		// Drawing refracted
 		context.lineWidth = 2;
 		context.strokeStyle = 'blue';
 
-		const rangle = surfaceAngleRad - r - 3*Math.PI/2
+		const rangle = surfaceAngleRad - r - (3 * Math.PI) / 2;
 		context.beginPath();
 		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
 		context.lineTo(
-			canvasMidpoint.x + ((width-padding)/2) * Math.cos(rangle),
-			canvasMidpoint.y + ((width-padding)/2) * Math.sin(rangle),
-		)
-		context.stroke()
+			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(rangle),
+			canvasMidpoint.y + ((width - padding) / 2) * Math.sin(rangle)
+		);
+		context.stroke();
 
-		context.lineWidth = r === 0 ? 3: 2;
+		context.lineWidth = r === 0 ? 3 : 2;
 		context.strokeStyle = 'green';
 
 		context.beginPath();
 		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
 		context.lineTo(
-			canvasMidpoint.x + ((width-padding)/2) * Math.cos(-Math.PI/2),
-			canvasMidpoint.y + ((width-padding)/2) * Math.sin(-Math.PI/2),
-		)
+			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(-Math.PI / 2),
+			canvasMidpoint.y + ((width - padding) / 2) * Math.sin(-Math.PI / 2)
+		);
 		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
 		context.lineTo(
-			canvasMidpoint.x + ((width-padding)/2) * Math.cos(-3*Math.PI/2),
-			canvasMidpoint.y + ((width-padding)/2) * Math.sin(-3*Math.PI/2),
-		)
-		context.stroke()
+			canvasMidpoint.x + ((width - padding) / 2) * Math.cos((-3 * Math.PI) / 2),
+			canvasMidpoint.y + ((width - padding) / 2) * Math.sin((-3 * Math.PI) / 2)
+		);
+		context.stroke();
 	}
 </script>
 
@@ -120,11 +117,19 @@ import{ math} from "mathlifier";
 	<h2>Inputs</h2>
 
 	<div class="input-cluster">
-		<NumField min={1} step={0.1} id="n1" placeholder="Refractive index of top medium " bind:value={n1}
-			>{@html math("\\mu_1")}</NumField
+		<NumField
+			min={1}
+			step={0.1}
+			id="n1"
+			placeholder="Refractive index of top medium "
+			bind:value={n1}>{@html math('\\mu_1')}</NumField
 		>
-		<NumField min={1} step={0.1} id="n2" placeholder="Refractive index of bottom medium " bind:value={n2}
-			>{@html math("\\mu_2")}</NumField
+		<NumField
+			min={1}
+			step={0.1}
+			id="n2"
+			placeholder="Refractive index of bottom medium "
+			bind:value={n2}>{@html math('\\mu_2')}</NumField
 		>
 		<NumField
 			id="incident-angle"
@@ -151,9 +156,9 @@ import{ math} from "mathlifier";
 		<div>
 			<p>Values:</p>
 			{@html math(`\\angle i = ${incidentAngleDegrees.toPrecision(4)} \\degree`)}
-			<br/>
+			<br />
 			{@html math(`\\angle r = ${rDegrees.toPrecision(4)} \\degree`)}
-			<hr/>
+			<hr />
 			<p>Legend:</p>
 			<ul>
 				<li><span class="bg-[pink]"></span> Denser Medium</li>
