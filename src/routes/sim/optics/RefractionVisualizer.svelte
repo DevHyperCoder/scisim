@@ -227,7 +227,7 @@
 	<hr />
 
 	<h2>Visualisation</h2>
-	<div class="grid grid-cols-2">
+	<div class="lg:grid lg:grid-cols-2">
 		<canvas bind:this={canvas} width="400" height="400" />
 		<div>
 			<p>Values:</p>
@@ -238,7 +238,9 @@
 
 			<!-- TIR -->
 			{#if n1 > n2}
-				{@html math(`\\theta_c = ${(Math.asin(n2/n1) * 180/ Math.PI).toPrecision(4)} \\degree`)}
+				{@html math(
+					`\\theta_c = ${((Math.asin(n2 / n1) * 180) / Math.PI).toPrecision(4)} \\degree`
+				)}
 			{/if}
 
 			<p>Legend:</p>

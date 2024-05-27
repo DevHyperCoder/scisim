@@ -170,7 +170,7 @@
 	<hr />
 
 	<h2>Visualisation</h2>
-	<div class="grid grid-cols-2">
+	<div class="lg:grid lg:grid-cols-2">
 		<canvas bind:this={canvas} width="400" height="400" />
 		<div>
 			<p>Legend:</p>
