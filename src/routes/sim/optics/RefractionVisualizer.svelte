@@ -35,6 +35,15 @@
 		}
 	}
 
+	function withinContext(
+		context: CanvasRenderingContext2D,
+		fn: (ctx: CanvasRenderingContext2D) => void
+	) {
+		context.save();
+		fn(context);
+		context.restore();
+	}
+
 	function draw(
 		surfaceAngleRad: number,
 		incidentWithNormalRad: number,
@@ -44,81 +53,66 @@
 	) {
 		const width = 400;
 		const height = 400;
-		const padding = 10;
-		context.fillStyle = 'black';
-		context.fillRect(0, 0, width, height);
 
 		const canvasMidpoint = new Vector(width / 2, height / 2);
+
 		context.translate(canvasMidpoint.x, canvasMidpoint.y);
 		context.rotate(-surfaceAngleRad);
 
-		// Coloured boxes
+		// Coloured mediums
 		context.fillStyle = n1 > n2 ? 'pink' : 'lightblue';
-		context.fillRect(
-			-(width - 2 * padding) / 2,
-			-(height - 2 * padding) / 2,
-			width - 2 * padding,
-			(height - 2 * padding) / 2
-		);
+		context.fillRect(-width, -height, width * 2, height);
 		context.fillStyle = n2 > n1 ? 'pink' : 'lightblue';
-		context.fillRect(
-			-(width - 2 * padding) / 2,
-			0,
-			width - 2 * padding,
-			(height - 2 * padding) / 2
-		);
+		context.fillRect(-width, 0, width * 2, height);
 
 		// Drawing refraction surface
-
 		context.lineWidth = 3;
 		context.strokeStyle = 'red';
 
 		context.beginPath();
-		context.moveTo(-(width - 2 * padding) / 2, 0);
-		context.lineTo((width - 2 * padding) / 2, 0);
+		context.moveTo(-width, 0);
+		context.lineTo(width, 0);
 		context.stroke();
 
 		// Drawing incident
-		context.lineWidth = 2;
-		context.strokeStyle = 'yellow';
+		withinContext(context, (context) => {
+			context.rotate(-incidentWithNormalRad + (3 * Math.PI) / 2 - Math.PI / 4);
 
-		const iangle = -incidentWithNormalRad - Math.PI / 2;
-		context.beginPath();
-		context.moveTo(0, 0);
-		context.lineTo(
-			((width - padding) / 2) * Math.cos(iangle),
-			((width - padding) / 2) * Math.sin(iangle)
-		);
-		context.stroke();
+			context.lineWidth = 2;
+			context.strokeStyle = 'yellow';
+
+			context.beginPath();
+			context.moveTo(0, 0);
+			context.lineTo(width / 2, height / 2);
+			context.stroke();
+		});
 
 		// Drawing refracted
-		context.lineWidth = 2;
-		context.strokeStyle = 'blue';
+		withinContext(context, (context) => {
+			context.rotate(-r + Math.PI / 4);
 
-		const rangle = -r - (3 * Math.PI) / 2;
-		context.beginPath();
-		context.moveTo(0, 0);
-		context.lineTo(
-			((width - padding) / 2) * Math.cos(rangle),
-			((width - padding) / 2) * Math.sin(rangle)
-		);
-		context.stroke();
+			context.lineWidth = 2;
+			context.strokeStyle = 'blue';
 
-		context.lineWidth = r === 0 ? 3 : 2;
-		context.strokeStyle = 'green';
+			context.beginPath();
+			context.moveTo(0, 0);
+			context.lineTo(width / 2, height / 2);
+			context.stroke();
+		});
 
-		context.beginPath();
-		context.moveTo(0, 0);
-		context.lineTo(
-			((width - 2 * padding) / 2) * Math.cos(-Math.PI / 2),
-			((width - 2 * padding) / 2) * Math.sin(-Math.PI / 2)
-		);
-		context.moveTo(0, 0);
-		context.lineTo(
-			((width - 2 * padding) / 2) * Math.cos((-3 * Math.PI) / 2),
-			((width - 2 * padding) / 2) * Math.sin((-3 * Math.PI) / 2)
-		);
-		context.stroke();
+		// Drawing Normal
+		withinContext(context, (context) => {
+			context.rotate(-Math.PI / 2);
+
+			context.lineWidth = r === 0 ? 3 : 2;
+			context.strokeStyle = 'green';
+
+			context.beginPath();
+			context.beginPath();
+			context.moveTo(-width, 0);
+			context.lineTo(width, 0);
+			context.stroke();
+		});
 
 		context.setTransform(1, 0, 0, 1, 0, 0);
 	}
