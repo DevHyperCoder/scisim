@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 body {
-	@apply font-['Montserrat'] lg:text-xl tracking-wide w-screen min-h-screen;
+	@apply font-['Montserrat'] lg:text-xl tracking-wide w-screen min-h-screen bg-yellow-200;
 }
 
 main {
-	@apply lg:px-48 px-2 bg-yellow-200 h-full;
+	@apply lg:px-48 px-2  h-full;
 }
 h1 {
 	@apply font-bold text-xl tracking-wide text-center mb-3;
