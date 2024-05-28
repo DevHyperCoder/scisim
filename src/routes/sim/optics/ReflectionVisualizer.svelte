@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { Vector } from '$lib/Vector';
 	import NumField from '$components/NumField.svelte';
+	import { withinContext, drawTwoArrowsAtAngle } from '$lib';
 
 	let surfaceAngleDegrees: number = 0;
 	$: surfaceAngleRad = (surfaceAngleDegrees * Math.PI) / 180;
@@ -12,7 +12,7 @@
 
 	$: incidentWithNormalDegrees =
 		ia_apply === 'normal' ? incidentAngleDegrees : 90 - incidentAngleDegrees;
-	$: incidentWithSurfaceRad = ((90 - incidentWithNormalDegrees) * Math.PI) / 180;
+	$: incidentWithNormalRad = (incidentWithNormalDegrees * Math.PI) / 180;
 
 	let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D;
@@ -25,118 +25,79 @@
 
 	$: {
 		if (ready) {
-			draw(surfaceAngleRad, incidentWithSurfaceRad);
+			draw(surfaceAngleRad, incidentWithNormalRad);
 		}
 	}
-
-	function draw(surfaceAngleRad: number, incidentWithSurfaceRad: number) {
+	function draw(surfaceAngleRad: number, incidentWithNormalRad: number) {
 		const width = 400;
 		const height = 400;
-		const padding = 50;
-		context.fillStyle = 'black';
-		context.fillRect(0, 0, width, height);
 
-		// Drawing mirror surface
+		withinContext(context, (context) => {
+			context.fillStyle = 'lightblue';
+			context.fillRect(0, 0, width, height);
 
-		context.lineWidth = 2;
-		context.strokeStyle = 'red';
+			context.translate(width / 2, height / 2);
+			context.rotate(-surfaceAngleRad);
 
-		const canvasMidpoint = new Vector(width / 2, height / 2);
-		context.beginPath();
-		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
-		context.lineTo(
-			canvasMidpoint.x + ((width - padding) / 2) * Math.cos(surfaceAngleRad),
-			canvasMidpoint.y - ((height - padding) / 2) * Math.sin(surfaceAngleRad)
-		);
-		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
-		context.lineTo(
-			canvasMidpoint.x - ((width - padding) / 2) * Math.cos(surfaceAngleRad),
-			canvasMidpoint.y + ((height - padding) / 2) * Math.sin(surfaceAngleRad)
-		);
-		context.stroke();
+			context.lineWidth = 2;
+			context.strokeStyle = 'red';
+			context.beginPath();
+			context.moveTo(-width, 0);
+			context.lineTo(width, 0);
 
-		// Drawing incident
-		context.lineWidth = 2;
-		context.strokeStyle = 'yellow';
+			const step = 10;
+			const mirrorSz = 10;
+			for (let i = -width; i < width; i += step) {
+				context.moveTo(i, 0);
+				context.lineTo(i, mirrorSz);
+			}
 
-		context.beginPath();
-		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
-		context.lineTo(
-			canvasMidpoint.x -
-				((width - padding) / 2) * Math.cos(surfaceAngleRad - incidentWithSurfaceRad),
-			canvasMidpoint.y +
-				((height - padding) / 2) * Math.sin(surfaceAngleRad - incidentWithSurfaceRad)
-		);
+			context.stroke();
 
-		const x =
-			canvasMidpoint.x -
-			((width - padding) / 2) * Math.cos(surfaceAngleRad - incidentWithSurfaceRad) * 0.75;
-		const y =
-			canvasMidpoint.y +
-			((height - padding) / 2) * Math.sin(surfaceAngleRad - incidentWithSurfaceRad) * 0.75;
-		console.log({ x, y });
+			// Drawing incident ray
+			withinContext(context, (context) => {
+				context.strokeStyle = 'yellow';
+				context.rotate(-Math.PI / 2 - incidentWithNormalRad);
+				context.beginPath();
+				context.moveTo(0, 0);
+				context.lineTo(width, 0);
+				context.stroke();
 
-		context.moveTo(x, y);
-		context.lineTo(
-			x - 10 * Math.cos(surfaceAngleRad - incidentWithSurfaceRad - Math.PI / 6),
-			y + 10 * Math.sin(surfaceAngleRad - incidentWithSurfaceRad - Math.PI / 6)
-		);
+				const perc = 0.6;
 
-		context.moveTo(x, y);
-		context.lineTo(
-			x + 10 * Math.cos(surfaceAngleRad - incidentWithSurfaceRad - (2 * Math.PI) / 6 - Math.PI / 2),
-			y - 10 * Math.sin(surfaceAngleRad - incidentWithSurfaceRad - (2 * Math.PI) / 6 - Math.PI / 2)
-		);
+				const x = (width / 2) * perc;
+				const y = 0;
+				const angle = Math.PI / 6;
+				const ll = 15;
+				drawTwoArrowsAtAngle(context, x, y, angle, ll);
+			});
+			withinContext(context, (context) => {
+				context.strokeStyle = 'blue';
+				context.rotate(-Math.PI / 2 + incidentWithNormalRad);
+				context.beginPath();
+				context.moveTo(0, 0);
+				context.lineTo(width, 0);
+				context.stroke();
 
-		context.stroke();
+				const perc = 0.4;
 
-		// Drawing reflected
-		context.lineWidth = 2;
-		context.strokeStyle = 'blue';
+				const x = (width / 2) * perc;
+				const y = 0;
+				const angle = Math.PI - Math.PI / 6;
+				const ll = 15;
 
-		context.beginPath();
-		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
-		context.lineTo(
-			canvasMidpoint.x +
-				((width - padding) / 2) * Math.cos(surfaceAngleRad + incidentWithSurfaceRad),
-			canvasMidpoint.y -
-				((height - padding) / 2) * Math.sin(surfaceAngleRad + incidentWithSurfaceRad)
-		);
+				drawTwoArrowsAtAngle(context, x, y, angle, ll);
+			});
 
-		const rx =
-			canvasMidpoint.x +
-			((width - padding) / 2) * Math.cos(surfaceAngleRad + incidentWithSurfaceRad) * 0.55;
-		const ry =
-			canvasMidpoint.y -
-			((height - padding) / 2) * Math.sin(surfaceAngleRad + incidentWithSurfaceRad) * 0.55;
-		console.log({ rx, ry });
-
-		context.moveTo(rx, ry);
-		context.lineTo(
-			rx - 10 * Math.cos(surfaceAngleRad + incidentWithSurfaceRad + Math.PI / 6),
-			ry + 10 * Math.sin(surfaceAngleRad + incidentWithSurfaceRad + Math.PI / 6)
-		);
-
-		context.moveTo(rx, ry);
-		context.lineTo(
-			rx +
-				10 * Math.cos(surfaceAngleRad + incidentWithSurfaceRad + (2 * Math.PI) / 6 + Math.PI / 2),
-			ry - 10 * Math.sin(surfaceAngleRad + incidentWithSurfaceRad + (2 * Math.PI) / 6 + Math.PI / 2)
-		);
-
-		context.stroke();
-
-		// Drawing normal
-		context.lineWidth = 2;
-		context.strokeStyle = 'green';
-
-		context.beginPath();
-		context.moveTo(canvasMidpoint.x, canvasMidpoint.y);
-		context.lineTo(
-			canvasMidpoint.x - ((width - padding) / 2) * Math.cos(surfaceAngleRad - Math.PI / 2),
-			canvasMidpoint.y + ((height - padding) / 2) * Math.sin(surfaceAngleRad - Math.PI / 2)
-		);
-		context.stroke();
+			withinContext(context, (context) => {
+				context.strokeStyle = 'green';
+				context.rotate(-Math.PI / 2);
+				context.beginPath();
+				context.moveTo(0, 0);
+				context.lineTo(width, 0);
+				context.stroke();
+			});
+		});
 	}
 </script>
 

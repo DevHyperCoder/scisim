@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { Vector } from '$lib/Vector';
 	import NumField from '$components/NumField.svelte';
+	import { drawTwoArrowsAtAngle, withinContext } from '$lib';
 
 	let ia_apply: 'surface' | 'normal' = 'normal';
 
@@ -47,15 +48,6 @@
 		}
 	}
 
-	function withinContext(
-		context: CanvasRenderingContext2D,
-		fn: (ctx: CanvasRenderingContext2D) => void
-	) {
-		context.save();
-		fn(context);
-		context.restore();
-	}
-
 	function draw(
 		surfaceAngleRad: number,
 		incidentWithNormalRad: number,
@@ -88,76 +80,46 @@
 
 		// Drawing incident
 		withinContext(context, (context) => {
-			context.rotate(-incidentWithNormalRad + (3 * Math.PI) / 2 - Math.PI / 4);
+			context.rotate(-incidentWithNormalRad - Math.PI / 2);
 
 			context.lineWidth = 2;
 			context.strokeStyle = 'yellow';
 
 			context.beginPath();
 			context.moveTo(0, 0);
-			context.lineTo(width / 2, height / 2);
+			context.lineTo(width, 0);
 			context.stroke();
 
 			const perc = 0.5;
 
 			const x = (width / 2) * perc;
-			const y = (height / 2) * perc;
+			const y = 0;
 			const angle = Math.PI / 6;
 			const ll = 15;
 
-			withinContext(context, (context) => {
-				context.translate(x, y);
-				context.lineWidth = 4;
-
-				context.rotate(angle);
-				context.beginPath();
-				context.moveTo(0, 0);
-				context.lineTo(ll, ll);
-				context.stroke();
-
-				context.rotate(-2 * angle);
-				context.beginPath();
-				context.moveTo(0, 0);
-				context.lineTo(ll, ll);
-				context.stroke();
-			});
+			drawTwoArrowsAtAngle(context, x, y, angle, ll);
 		});
 
 		// Drawing refracted
 		withinContext(context, (context) => {
-			context.rotate(-r + Math.PI / 4);
+			context.rotate(Math.PI / 2 - r);
 
 			context.lineWidth = 2;
 			context.strokeStyle = 'blue';
 
 			context.beginPath();
 			context.moveTo(0, 0);
-			context.lineTo(width / 2, height / 2);
+			context.lineTo(width, 0);
 			context.stroke();
 
 			const perc = 0.5;
 
 			const x = (width / 2) * perc;
-			const y = (height / 2) * perc;
+			const y = 0;
 			const angle = Math.PI - Math.PI / 6;
 			const ll = 15;
 
-			withinContext(context, (context) => {
-				context.translate(x, y);
-				context.lineWidth = 4;
-
-				context.rotate(angle);
-				context.beginPath();
-				context.moveTo(0, 0);
-				context.lineTo(ll, ll);
-				context.stroke();
-
-				context.rotate(-2 * angle);
-				context.beginPath();
-				context.moveTo(0, 0);
-				context.lineTo(ll, ll);
-				context.stroke();
-			});
+			drawTwoArrowsAtAngle(context, x, y, angle, ll);
 		});
 
 		// Drawing Normal
@@ -234,7 +196,7 @@
 			{@html math(`\\angle i = ${incidentAngleDegrees.toPrecision(4)} \\degree`)}
 			<br />
 			{@html math(`\\angle r = ${rDegrees.toPrecision(4)} \\degree`)}
-			<hr />
+			<br />
 
 			<!-- TIR -->
 			{#if n1 > n2}
@@ -242,6 +204,7 @@
 					`\\theta_c = ${((Math.asin(n2 / n1) * 180) / Math.PI).toPrecision(4)} \\degree`
 				)}
 			{/if}
+			<hr />
 
 			<p>Legend:</p>
 			<ul>
