@@ -73,19 +73,23 @@
 			context.lineWidth = 2;
 			context.strokeStyle = 'yellow';
 
-			context.beginPath();
-			context.moveTo(0, 0);
-			context.lineTo(width, 0);
-			context.stroke();
-
 			const perc = 0.5;
-
 			const x = (width / 2) * perc;
 			const y = 0;
 			const angle = Math.PI / 6;
 			const ll = 15;
 
 			drawTwoArrowsAtAngle(context, x, y, angle, ll);
+
+			context.beginPath();
+			context.moveTo(0, 0);
+			context.lineTo(width, 0);
+			context.stroke();
+
+			context.setLineDash([5, 3]);
+			context.moveTo(0, 0);
+			context.lineTo(-width, 0);
+			context.stroke();
 		});
 
 		// Drawing refracted

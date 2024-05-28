@@ -53,13 +53,14 @@
 				context.translate(-slabSzW / 2, 0);
 				context.rotate(incidentAngleRad);
 
-				context.beginPath();
 				context.strokeStyle = 'yellow';
+				drawTwoArrowsAtAngle(context, -50, 0, Math.PI - Math.PI / 6, 10);
+				context.beginPath();
 				context.moveTo(0, 0);
 				context.lineTo(-width, 0);
+				context.setLineDash([5, 3]);
 				context.lineTo(width, 0);
 				context.stroke();
-				drawTwoArrowsAtAngle(context, -50, 0, Math.PI - Math.PI / 6, 10);
 			});
 
 			withinContext(context, (context) => {
