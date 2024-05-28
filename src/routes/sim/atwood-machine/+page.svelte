@@ -206,6 +206,7 @@
 	let isTheoryExpanded = true;
 </script>
 
+<svelte:head><title>SciSim - Atwood Machine</title></svelte:head>
 <main>
 	<header>
 		<h1>Atwood machine</h1>

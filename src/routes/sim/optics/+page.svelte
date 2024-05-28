@@ -4,6 +4,10 @@
 	import SlabVisualizer from './SlabVisualizer.svelte';
 </script>
 
+<svelte:head>
+	<title>SciSim - Optics</title>
+</svelte:head>
+
 <main>
 	<header>
 		<h1>Optic simulations</h1>

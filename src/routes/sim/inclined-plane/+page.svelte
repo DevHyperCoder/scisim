@@ -208,6 +208,8 @@
 	}
 </script>
 
+<svelte:head><title>SciSim - Inclined Plane</title></svelte:head>
+
 <main>
 	<header>
 		<h1>Inclined Plane</h1>
