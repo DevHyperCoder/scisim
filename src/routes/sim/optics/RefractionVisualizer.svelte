@@ -3,7 +3,7 @@
 	import { onMount } from 'svelte';
 	import { Vector } from '$lib/Vector';
 	import NumField from '$components/NumField.svelte';
-	import { drawTwoArrowsAtAngle, withinContext } from '$lib';
+	import { drawTwoArrowsAtAngle, withinContext, calculateR } from '$lib';
 
 	let ia_apply: 'surface' | 'normal' = 'normal';
 
@@ -17,18 +17,6 @@
 
 	$: r = calculateR(incidentWithNormalRad, n1, n2);
 	$: rDegrees = (r * 180) / Math.PI;
-
-	function calculateR(incidentWithNormalRad: number, n1: number, n2: number) {
-		const i_c = Math.asin(n2 / n1);
-
-		if (incidentWithNormalRad > i_c) {
-			return Math.PI - incidentWithNormalRad;
-		} else if (incidentWithNormalRad == i_c) {
-			return Math.PI / 2;
-		} else {
-			return Math.asin(Math.sin(incidentWithNormalRad) / (n2 / n1));
-		}
-	}
 
 	let n1: number = 1.0;
 	let n2: number = 1.5;

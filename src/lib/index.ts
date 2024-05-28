@@ -31,3 +31,15 @@ export function drawTwoArrowsAtAngle(
 		context.stroke();
 	});
 }
+
+export function calculateR(incidentWithNormalRad: number, n1: number, n2: number) {
+	const i_c = Math.asin(n2 / n1);
+
+	if (incidentWithNormalRad > i_c) {
+		return Math.PI - incidentWithNormalRad;
+	} else if (incidentWithNormalRad == i_c) {
+		return Math.PI / 2;
+	} else {
+		return Math.asin(Math.sin(incidentWithNormalRad) / (n2 / n1));
+	}
+}

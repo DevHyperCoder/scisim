@@ -8,7 +8,9 @@
 
 	<div class="grid grid-cols-1 gap-4">
 		<SimulationCard name="Optics" id="optics">
-			<p>Simulation of optical phenomenon like reflection, refraction.</p>
+			<p>
+				Simulation of optical phenomenon like reflection, refraction and glass slab lateral shift.
+			</p>
 		</SimulationCard>
 		<SimulationCard name="Atwood Machine" id="atwood-machine">
 			<p>
