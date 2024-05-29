@@ -6,7 +6,7 @@
 	export let height: number;
 	export let draw: DrawFn;
 
-	let canvas: HTMLCanvasElement;
+	export let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D;
 	let ready = false;
 
