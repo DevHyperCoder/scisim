@@ -6,6 +6,7 @@
 	import QuantityDisplay from '$components/QuantityDisplay.svelte';
 	import { onMount } from 'svelte';
 	import Theory from './Theory.svelte';
+	import { valConstraint } from '$lib';
 	let m1 = 1;
 	let m2 = 2;
 	let g = 9.8;
@@ -83,10 +84,6 @@
 	// Animation
 	let previous: number;
 
-	function valContraint(v: number, min: number, max: number) {
-		return Math.min(max, Math.max(v, min));
-	}
-
 	function physics(): AtwoodTimeData {
 		const stepMS = 1;
 		const dt = stepMS / 1000;
@@ -105,8 +102,8 @@
 			v_m1 += a * dt;
 			v_m2 += -a * dt;
 
-			sim_m1 = valContraint(sim_m1 + v_m1 * dt, 0, 100);
-			sim_m2 = valContraint(sim_m2 + v_m2 * dt, 0, 100);
+			sim_m1 = valConstraint(sim_m1 + v_m1 * dt, 0, 100);
+			sim_m2 = valConstraint(sim_m2 + v_m2 * dt, 0, 100);
 			t += dt;
 
 			// Stop animation once at extreme points

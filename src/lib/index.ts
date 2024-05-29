@@ -43,3 +43,7 @@ export function calculateR(incidentWithNormalRad: number, n1: number, n2: number
 		return Math.asin(Math.sin(incidentWithNormalRad) / (n2 / n1));
 	}
 }
+
+export function valConstraint(v: number, min: number, max: number) {
+	return Math.min(max, Math.max(v, min));
+}
