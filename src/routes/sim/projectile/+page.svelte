@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Canvas from '$components/Canvas.svelte';
+	import FullWidthCanvas from '$components/FullWidthCanvas.svelte';
 	import Graph from '$components/Graph.svelte';
 	import NumField from '$components/NumField.svelte';
 	import QuantityDisplay from '$components/QuantityDisplay.svelte';
@@ -78,13 +78,12 @@
 	}
 
 	$: draw = (context: CanvasRenderingContext2D, width: number, height: number) => {
-		const renderData = data[count];
-		if (!renderData) return;
+		const padding = width * 0.1;
+		const scale = width / 100;
 
 		context.fillStyle = 'black';
 		context.fillRect(0, 0, width, height);
-		const padding = 30;
-		const scale = 3;
+		console.log('fil black');
 
 		withinContext(context, (context) => {
 			context.translate(padding, height / 2);
@@ -94,10 +93,17 @@
 			context.lineTo(width - 2 * padding, 0);
 			context.stroke();
 
+			const renderData = data[count];
+			if (!renderData) {
+				console.log('a');
+				return;
+			}
+
 			context.scale(scale, scale);
+			const radius = 10 / scale;
 			context.fillStyle = 'lightpink';
 			context.beginPath();
-			context.arc(renderData.bodyPos.x, -renderData.bodyPos.y, 10 / scale, 0, Math.PI * 2);
+			context.arc(renderData.bodyPos.x, -(renderData.bodyPos.y + radius), radius, 0, Math.PI * 2);
 			context.fill();
 		});
 	};
@@ -136,7 +142,7 @@
 	</section>
 	<section>
 		<h2>Visualisation</h2>
-		<Canvas {draw} width={300} height={300} />
+		<FullWidthCanvas {draw} />
 
 		<button
 			on:click={() => {
