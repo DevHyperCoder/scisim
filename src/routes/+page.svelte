@@ -2,6 +2,7 @@
 	import SimulationCard from '$components/SimulationCard.svelte';
 </script>
 
+<svelte:head><title>SciSim</title></svelte:head>
 <main>
 	<h1 class="">SciSim</h1>
 	<p>This is a collection of a few simulations I made</p>
