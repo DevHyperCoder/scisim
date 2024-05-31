@@ -8,6 +8,12 @@
 	<p>This is a collection of a few simulations I made</p>
 
 	<div class="grid grid-cols-1 gap-4">
+		<SimulationCard name="Projectile Motion" id="projectile">
+			<p>
+				Simulation of projectile motion where you can adjust the angle and find out the range, max
+				height of the projectile.
+			</p>
+		</SimulationCard>
 		<SimulationCard name="Optics" id="optics">
 			<p>
 				Simulation of optical phenomenon like reflection, refraction and glass slab lateral shift.
