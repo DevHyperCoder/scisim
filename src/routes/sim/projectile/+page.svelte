@@ -3,53 +3,18 @@
 	import Graph from '$components/Graph.svelte';
 	import NumField from '$components/NumField.svelte';
 	import QuantityDisplay from '$components/QuantityDisplay.svelte';
-	import { withinContext } from '$lib';
+	import type { ProjectileSimResult } from '$lib/sims/projectile';
+
+	import projectileDraw from '$lib/sims/projectile/draw';
+	import projectilePhysics from '$lib/sims/projectile/physics';
+	import graphs from '$lib/sims/projectile/graph';
 	import { Vector } from '$lib/Vector';
-	import type { ChartData } from 'chart.js';
+	import { onMount } from 'svelte';
 
 	let g = 9.8;
 	let u = 10;
 	let angle = 45;
 	$: angleRad = (angle * Math.PI) / 180;
-
-	type PhysicsData = {
-		t: number;
-		bodyPos: { x: number; y: number };
-		bodyVel: { x: number; y: number };
-	};
-
-	let data: PhysicsData[] = [];
-	let bodyPos = Vector.ZERO();
-	let bodyVel = Vector.ZERO();
-	let t = 0;
-
-	function physics(): PhysicsData[] {
-		let t = 0;
-
-		const dt = 1 / 1000;
-
-		const pos = Vector.ZERO();
-		const v = new Vector(u * Math.cos(angleRad), u * Math.sin(angleRad));
-		const a = new Vector(0, -g);
-
-		const data: PhysicsData[] = [];
-		data.push({ t, bodyPos: { ...pos }, bodyVel: { ...v } });
-
-		// eslint-disable-next-line no-constant-condition
-		while (true) {
-			v.madd(a.multiply(dt));
-			pos.madd(v.multiply(dt));
-			t += dt;
-
-			if (pos.y <= 0) {
-				break;
-			}
-
-			data.push({ t, bodyPos: { ...pos }, bodyVel: { ...v } });
-		}
-
-		return data;
-	}
 
 	let previous: number;
 	function startAnimation() {
@@ -60,74 +25,34 @@
 		});
 	}
 
+	let sim_results: ProjectileSimResult[] = [];
 	let count = 0;
+	$: currentSimResult = sim_results[count];
+
 	function animate(timestamp: number) {
 		const elapsedMS = Math.floor(timestamp - previous);
 		previous = timestamp;
 
-		count = Math.min(count + elapsedMS, data.length - 1);
-		const { bodyPos: vPos, bodyVel: vVel } = data[count];
+		count = Math.min(count + elapsedMS, sim_results.length - 1);
 
-		bodyPos = new Vector(vPos.x, vPos.y);
-		bodyVel = new Vector(vVel.x, vVel.y);
-		t = count / 1000;
-
-		if (count < data.length - 1) {
+		if (count < sim_results.length - 1) {
 			requestAnimationFrame(animate);
 		}
 	}
 
 	$: draw = (context: CanvasRenderingContext2D, width: number, height: number) => {
-		const padding = width * 0.1;
-		const scale = width / 100;
-
-		context.fillStyle = 'black';
-		context.fillRect(0, 0, width, height);
-		console.log('fil black');
-
-		withinContext(context, (context) => {
-			context.translate(padding, height / 2);
-			context.beginPath();
-			context.strokeStyle = 'gray';
-			context.moveTo(0, 0);
-			context.lineTo(width - 2 * padding, 0);
-			context.stroke();
-
-			const renderData = data[count];
-			if (!renderData) {
-				console.log('a');
-				return;
-			}
-
-			context.scale(scale, scale);
-			const radius = 10 / scale;
-			context.fillStyle = 'lightpink';
-			context.beginPath();
-			context.arc(renderData.bodyPos.x, -(renderData.bodyPos.y + radius), radius, 0, Math.PI * 2);
-			context.fill();
-		});
+		projectileDraw(
+			context,
+			width,
+			height,
+			currentSimResult ? currentSimResult.value.bodyPos : Vector.ZERO()
+		);
 	};
+	onMount(() => simulate());
 
-	function convertToVTime(data: PhysicsData[]): ChartData<'line'> {
-		return {
-			labels: data.map((r) => r.t.toPrecision(4)),
-			datasets: [
-				{ label: 'v', data: data.map((r) => Math.sqrt(r.bodyVel.x ** 2 + r.bodyVel.y ** 2)) },
-				{ label: 'v_y', data: data.map((r) => r.bodyVel.y) },
-				{ label: 'v_x', data: data.map((r) => r.bodyVel.x) }
-			]
-		};
+	function simulate() {
+		sim_results = projectilePhysics({ u, g, angleRad });
 	}
-
-	function convertToxy(data: PhysicsData[]): ChartData<'line'> {
-		return {
-			labels: data.map((r) => r.bodyPos.x.toPrecision(4)),
-			datasets: [{ label: 'pos', data: data.map((r) => r.bodyPos.y) }]
-		};
-	}
-
-	$: vTimeChartData = convertToVTime(data);
-	$: xyChartData = convertToxy(data);
 </script>
 
 <main>
@@ -144,22 +69,22 @@
 		<h2>Visualisation</h2>
 		<FullWidthCanvas {draw} />
 
-		<button
-			on:click={() => {
-				data = physics();
-				console.log({ data });
-			}}>SImulate</button
-		>
+		<button on:click={simulate}>SImulate</button>
 		<button on:click={startAnimation}>Animate</button>
 
 		<hr />
-		<QuantityDisplay label="Time" value={t.toPrecision(4)} unit="s" />
-		<QuantityDisplay label="Velocity" value={bodyVel.len().toPrecision(4)} unit="m/s" />
-		<QuantityDisplay label="X" value={bodyPos.x.toPrecision(4)} unit="m" />
-		<QuantityDisplay label="Y" value={bodyPos.y.toPrecision(4)} unit="m" />
+		{#if currentSimResult}
+			<QuantityDisplay label="Time" value={currentSimResult.t.toPrecision(4)} unit="s" />
+			<QuantityDisplay
+				label="Velocity"
+				value={currentSimResult.value.bodyVel.len().toPrecision(4)}
+				unit="m/s"
+			/>
+			<QuantityDisplay label="X" value={currentSimResult.value.bodyPos.x.toPrecision(4)} unit="m" />
+			<QuantityDisplay label="Y" value={currentSimResult.value.bodyPos.y.toPrecision(4)} unit="m" />
+		{/if}
 		<hr />
 
-		<Graph xlabel="Time" ylabel="v" data={vTimeChartData} />
-		<Graph xlabel="x" ylabel="y" data={xyChartData} />
+		<Graph xlabel="s" ylabel="m/s" data={graphs['v-t'](sim_results)} />
 	</section>
 </main>

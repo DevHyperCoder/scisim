@@ -10,6 +10,7 @@
 	import atwoodDraw from '$lib/sims/atwood-machine/draw';
 	import atwoodPhysics from '$lib/sims/atwood-machine/physics';
 	import FullWidthCanvas from '$components/FullWidthCanvas.svelte';
+	import { onMount } from 'svelte';
 
 	// User input
 	let m1 = 1;
@@ -44,31 +45,7 @@
 	};
 
 	// Animation
-	let currentSceneSimResult: AtwoodSimResult = {
-		t: 0,
-		value: {
-			sim_m1: input_initial_m1y,
-			sim_m2: input_initial_m2y,
-			v_m1: 0,
-			v_m2: 0
-		}
-	};
-	$: {
-		const _a = sim_results[count];
-		if (_a) {
-			currentSceneSimResult = _a;
-		} else {
-			currentSceneSimResult = {
-				t: 0,
-				value: {
-					sim_m1: input_initial_m1y,
-					sim_m2: input_initial_m2y,
-					v_m1: 0,
-					v_m2: 0
-				}
-			};
-		}
-	}
+	$: currentSceneSimResult = sim_results[count];
 
 	let previous: number;
 
@@ -111,6 +88,8 @@
 		sim = false;
 		count = 0;
 	}
+
+	onMount(() => simulate());
 
 	let isTheoryExpanded = true;
 </script>
