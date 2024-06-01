@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { math } from 'mathlifier';
 	import { onMount } from 'svelte';
-	import { Vector } from '$lib/Vector';
 	import NumField from '$components/NumField.svelte';
-	import { drawTwoArrowsAtAngle, withinContext, calculateR } from '$lib';
+	import { calculateR } from '$lib';
+	import refractionDraw from '$lib/sims/optics/refraction/draw';
+	import FullWidthCanvas from '$components/FullWidthCanvas.svelte';
 
 	let ia_apply: 'surface' | 'normal' = 'normal';
 
-	let surfaceAngleDegrees = 0;
+	let surfaceAngleDegrees: number;
 	$: surfaceAngleRad = (surfaceAngleDegrees * Math.PI) / 180;
-	let incidentAngleDegrees: number = 60;
+	let incidentAngleDegrees: number;
 
 	$: incidentWithNormalDegrees =
 		ia_apply === 'normal' ? incidentAngleDegrees : 90 - incidentAngleDegrees;
@@ -18,118 +19,19 @@
 	$: r = calculateR(incidentWithNormalRad, n1, n2);
 	$: rDegrees = (r * 180) / Math.PI;
 
-	let n1: number = 1.0;
-	let n2: number = 1.5;
-
-	let canvas: HTMLCanvasElement;
-	let context: CanvasRenderingContext2D;
-	let ready = false;
+	let n1: number;
+	let n2: number;
 
 	onMount(() => {
-		context = canvas.getContext('2d')!;
-		ready = true;
+		n1 = 1.0;
+		n2 = 1.5;
+		surfaceAngleDegrees = 0;
+		incidentAngleDegrees = 60;
 	});
 
-	$: {
-		if (ready) {
-			draw(surfaceAngleRad, incidentWithNormalRad, r, n1, n2);
-		}
-	}
-
-	function draw(
-		surfaceAngleRad: number,
-		incidentWithNormalRad: number,
-		r: number,
-		n1: number,
-		n2: number
-	) {
-		const width = 400;
-		const height = 400;
-
-		const canvasMidpoint = new Vector(width / 2, height / 2);
-
-		context.translate(canvasMidpoint.x, canvasMidpoint.y);
-		context.rotate(-surfaceAngleRad);
-
-		// Coloured mediums
-		context.fillStyle = n1 > n2 ? 'pink' : 'lightblue';
-		context.fillRect(-width, -height, width * 2, height);
-		context.fillStyle = n2 > n1 ? 'pink' : 'lightblue';
-		context.fillRect(-width, 0, width * 2, height);
-
-		// Drawing refraction surface
-		context.lineWidth = 3;
-		context.strokeStyle = 'red';
-
-		context.beginPath();
-		context.moveTo(-width, 0);
-		context.lineTo(width, 0);
-		context.stroke();
-
-		// Drawing incident
-		withinContext(context, (context) => {
-			context.rotate(-incidentWithNormalRad - Math.PI / 2);
-
-			context.lineWidth = 2;
-			context.strokeStyle = 'yellow';
-
-			const perc = 0.5;
-			const x = (width / 2) * perc;
-			const y = 0;
-			const angle = Math.PI / 6;
-			const ll = 15;
-
-			drawTwoArrowsAtAngle(context, x, y, angle, ll);
-
-			context.beginPath();
-			context.moveTo(0, 0);
-			context.lineTo(width, 0);
-			context.stroke();
-
-			context.setLineDash([5, 3]);
-			context.moveTo(0, 0);
-			context.lineTo(-width, 0);
-			context.stroke();
-		});
-
-		// Drawing refracted
-		withinContext(context, (context) => {
-			context.rotate(Math.PI / 2 - r);
-
-			context.lineWidth = 2;
-			context.strokeStyle = 'blue';
-
-			context.beginPath();
-			context.moveTo(0, 0);
-			context.lineTo(width, 0);
-			context.stroke();
-
-			const perc = 0.5;
-
-			const x = (width / 2) * perc;
-			const y = 0;
-			const angle = Math.PI - Math.PI / 6;
-			const ll = 15;
-
-			drawTwoArrowsAtAngle(context, x, y, angle, ll);
-		});
-
-		// Drawing Normal
-		withinContext(context, (context) => {
-			context.rotate(-Math.PI / 2);
-
-			context.lineWidth = r === 0 ? 3 : 2;
-			context.strokeStyle = 'green';
-
-			context.beginPath();
-			context.beginPath();
-			context.moveTo(-width, 0);
-			context.lineTo(width, 0);
-			context.stroke();
-		});
-
-		context.setTransform(1, 0, 0, 1, 0, 0);
-	}
+	$: draw = (context: CanvasRenderingContext2D, width: number, height: number) => {
+		refractionDraw(context, width, height, surfaceAngleRad, incidentWithNormalRad, r, n1, n2);
+	};
 </script>
 
 <section>
@@ -181,20 +83,22 @@
 	<hr />
 
 	<h2>Visualisation</h2>
-	<div class="lg:grid lg:grid-cols-2">
-		<canvas bind:this={canvas} width="400" height="400" />
+	<div class="lg:grid lg:grid-cols-2 gap-3">
+		<FullWidthCanvas {draw} />
 		<div>
-			<p>Values:</p>
-			{@html math(`\\angle i = ${incidentAngleDegrees.toPrecision(4)} \\degree`)}
-			<br />
-			{@html math(`\\angle r = ${rDegrees.toPrecision(4)} \\degree`)}
-			<br />
+			{#if incidentAngleDegrees}
+				<p>Values:</p>
+				{@html math(`\\angle i = ${incidentAngleDegrees.toPrecision(4)} \\degree`)}
+				<br />
+				{@html math(`\\angle r = ${rDegrees.toPrecision(4)} \\degree`)}
+				<br />
 
-			<!-- TIR -->
-			{#if n1 > n2}
-				{@html math(
-					`\\theta_c = ${((Math.asin(n2 / n1) * 180) / Math.PI).toPrecision(4)} \\degree`
-				)}
+				<!-- TIR -->
+				{#if n1 > n2}
+					{@html math(
+						`\\theta_c = ${((Math.asin(n2 / n1) * 180) / Math.PI).toPrecision(4)} \\degree`
+					)}
+				{/if}
 			{/if}
 			<hr />
 

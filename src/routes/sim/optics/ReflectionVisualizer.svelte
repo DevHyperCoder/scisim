@@ -1,104 +1,28 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import NumField from '$components/NumField.svelte';
-	import { withinContext, drawTwoArrowsAtAngle } from '$lib';
+	import FullWidthCanvas from '$components/FullWidthCanvas.svelte';
+	import reflectionDraw from '$lib/sims/optics/reflection/draw';
 
-	let surfaceAngleDegrees: number = 0;
+	let surfaceAngleDegrees: number;
 	$: surfaceAngleRad = (surfaceAngleDegrees * Math.PI) / 180;
 
 	let ia_apply: 'surface' | 'normal' = 'normal';
 
-	let incidentAngleDegrees: number = 0;
+	let incidentAngleDegrees: number;
 
 	$: incidentWithNormalDegrees =
 		ia_apply === 'normal' ? incidentAngleDegrees : 90 - incidentAngleDegrees;
 	$: incidentWithNormalRad = (incidentWithNormalDegrees * Math.PI) / 180;
 
-	let canvas: HTMLCanvasElement;
-	let context: CanvasRenderingContext2D;
-	let ready = false;
+	$: draw = (context: CanvasRenderingContext2D, width: number, height: number) => {
+		reflectionDraw(context, width, height, surfaceAngleRad, incidentWithNormalRad);
+	};
 
 	onMount(() => {
-		context = canvas.getContext('2d')!;
-		ready = true;
+		surfaceAngleDegrees = 0;
+		incidentAngleDegrees = 0;
 	});
-
-	$: {
-		if (ready) {
-			draw(surfaceAngleRad, incidentWithNormalRad);
-		}
-	}
-	function draw(surfaceAngleRad: number, incidentWithNormalRad: number) {
-		const width = 400;
-		const height = 400;
-
-		withinContext(context, (context) => {
-			context.fillStyle = 'lightblue';
-			context.fillRect(0, 0, width, height);
-
-			context.translate(width / 2, height / 2);
-			context.rotate(-surfaceAngleRad);
-
-			context.lineWidth = 2;
-			context.strokeStyle = 'red';
-			context.beginPath();
-			context.moveTo(-width, 0);
-			context.lineTo(width, 0);
-
-			const step = 10;
-			const mirrorSz = 10;
-			for (let i = -width; i < width; i += step) {
-				context.moveTo(i, 0);
-				context.lineTo(i, mirrorSz);
-			}
-
-			context.stroke();
-
-			// Drawing incident ray
-			withinContext(context, (context) => {
-				context.strokeStyle = 'yellow';
-				context.rotate(-Math.PI / 2 - incidentWithNormalRad);
-				context.beginPath();
-				context.moveTo(0, 0);
-				context.lineTo(width, 0);
-				context.stroke();
-
-				const perc = 0.6;
-
-				const x = (width / 2) * perc;
-				const y = 0;
-				const angle = Math.PI / 6;
-				const ll = 15;
-				drawTwoArrowsAtAngle(context, x, y, angle, ll);
-			});
-			withinContext(context, (context) => {
-				context.strokeStyle = 'blue';
-				context.rotate(-Math.PI / 2 + incidentWithNormalRad);
-				context.beginPath();
-				context.moveTo(0, 0);
-				context.lineTo(width, 0);
-				context.stroke();
-
-				const perc = 0.4;
-
-				const x = (width / 2) * perc;
-				const y = 0;
-				const angle = Math.PI - Math.PI / 6;
-				const ll = 15;
-
-				drawTwoArrowsAtAngle(context, x, y, angle, ll);
-			});
-
-			withinContext(context, (context) => {
-				context.strokeStyle = 'green';
-				context.rotate(-Math.PI / 2);
-				context.beginPath();
-				context.moveTo(0, 0);
-				context.lineTo(width, 0);
-				context.stroke();
-			});
-		});
-	}
 </script>
 
 <section>
@@ -131,8 +55,8 @@
 	<hr />
 
 	<h2>Visualisation</h2>
-	<div class="lg:grid lg:grid-cols-2">
-		<canvas bind:this={canvas} width="400" height="400" />
+	<div class="lg:grid lg:grid-cols-2 gap-3">
+		<FullWidthCanvas {draw} />
 		<div>
 			<p>Legend:</p>
 			<ul>

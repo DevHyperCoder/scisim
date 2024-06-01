@@ -2,96 +2,28 @@
 	import { math } from 'mathlifier';
 	import NumField from '$components/NumField.svelte';
 	import { onMount } from 'svelte';
-	import { calculateR, drawTwoArrowsAtAngle, withinContext } from '$lib';
+	import { calculateR } from '$lib';
+	import slabDraw from '$lib/sims/optics/slab/draw';
+	import FullWidthCanvas from '$components/FullWidthCanvas.svelte';
 
-	let slabRefractiveIndex: number = 1.5;
-	let slabThickness: number = 100;
-	let incidentAngleDegrees: number = 45;
+	let slabRefractiveIndex: number;
+	let slabThickness: number;
+	let incidentAngleDegrees: number;
 	$: incidentAngleRad = (incidentAngleDegrees * Math.PI) / 180;
 
 	$: firstR = calculateR(incidentAngleRad, 1, slabRefractiveIndex);
 	$: secondR = calculateR(firstR, slabRefractiveIndex, 1);
 	$: lateralDisplacement = (slabThickness * Math.sin(incidentAngleRad - firstR)) / Math.cos(firstR);
 
-	let canvas: HTMLCanvasElement;
-	let context: CanvasRenderingContext2D;
-	let ready = false;
-
 	onMount(() => {
-		context = canvas.getContext('2d')!;
-		ready = true;
+		slabRefractiveIndex = 1.5;
+		slabThickness = 100;
+		incidentAngleDegrees = 45;
 	});
 
-	$: if (ready) draw(incidentAngleRad, slabThickness, firstR, secondR);
-
-	function draw(incidentAngleRad: number, slabSzW: number, firstR: number, secondR: number) {
-		const height = 400;
-		const width = 400;
-		context.fillStyle = 'black';
-		context.fillRect(0, 0, width, height);
-
-		//const slabSzW = 100;
-		const slabSzH = 300;
-
-		withinContext(context, (context) => {
-			context.translate(width / 2, height / 2);
-			context.fillStyle = 'lightblue';
-			context.fillRect(-slabSzW / 2, -slabSzH / 2, slabSzW, slabSzH);
-
-			context.translate(0, -slabSzH * 0.4);
-
-			// Drawing normal
-			context.lineWidth = 2;
-			context.strokeStyle = 'green';
-			context.beginPath();
-			context.moveTo(-width, 0);
-			context.lineTo(width, 0);
-			context.stroke();
-
-			// Drawing incident
-			withinContext(context, (context) => {
-				context.translate(-slabSzW / 2, 0);
-				context.rotate(incidentAngleRad);
-
-				context.strokeStyle = 'yellow';
-				drawTwoArrowsAtAngle(context, -50, 0, Math.PI - Math.PI / 6, 10);
-				context.beginPath();
-				context.moveTo(0, 0);
-				context.lineTo(-width, 0);
-				context.setLineDash([5, 3]);
-				context.lineTo(width, 0);
-				context.stroke();
-			});
-
-			withinContext(context, (context) => {
-				context.translate(-slabSzW / 2, 0);
-				context.rotate(firstR);
-
-				const w = slabSzW / Math.cos(firstR);
-
-				context.beginPath();
-				context.strokeStyle = 'blue';
-				context.moveTo(0, 0);
-				context.lineTo(w, 0);
-				context.stroke();
-				drawTwoArrowsAtAngle(context, w * 0.5, 0, Math.PI - Math.PI / 6, 10);
-			});
-
-			withinContext(context, (context) => {
-				const w = slabSzW / Math.cos(firstR);
-
-				context.translate(slabSzW / 2, w * Math.sin(firstR));
-				context.rotate(secondR);
-
-				context.beginPath();
-				context.strokeStyle = 'blue';
-				context.moveTo(0, 0);
-				context.lineTo(width, 0);
-				context.stroke();
-				drawTwoArrowsAtAngle(context, width * 0.1, 0, Math.PI - Math.PI / 6, 10);
-			});
-		});
-	}
+	$: draw = (context: CanvasRenderingContext2D, width: number, height: number) => {
+		slabDraw(context, width, height, incidentAngleRad, slabThickness, firstR, secondR);
+	};
 </script>
 
 <section>
@@ -112,6 +44,10 @@
 	</div>
 	<hr />
 	<h2>Visualisation</h2>
-	<canvas width="400" height="400" bind:this={canvas}></canvas>
-	<p>Lateral shift: {lateralDisplacement}</p>
+	<div class="lg:grid lg:grid-cols-2 gap-3">
+		<FullWidthCanvas {draw} />
+		{#if lateralDisplacement}
+			<p>Lateral shift: {lateralDisplacement.toPrecision(4)}</p>
+		{/if}
+	</div>
 </section>
