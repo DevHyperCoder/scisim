@@ -4,9 +4,14 @@
 	import Graph from '$components/Graph.svelte';
 	import NumField from '$components/NumField.svelte';
 	import QuantityDisplay from '$components/QuantityDisplay.svelte';
-	import { onMount } from 'svelte';
 	import Theory from './Theory.svelte';
-	import { valConstraint } from '$lib';
+	import type { AtwoodSimResult } from '$lib/sims/atwood-machine';
+	import graphs from '$lib/sims/atwood-machine/graph';
+	import atwoodDraw from '$lib/sims/atwood-machine/draw';
+	import atwoodPhysics from '$lib/sims/atwood-machine/physics';
+	import FullWidthCanvas from '$components/FullWidthCanvas.svelte';
+
+	// User input
 	let m1 = 1;
 	let m2 = 2;
 	let g = 9.8;
@@ -17,105 +22,55 @@
 	let u = 0;
 	let u_apply: 'm1' | 'm2' = 'm1';
 
+	// Reactive calculations
 	$: tension = parseFloat(((2 * m1 * m2 * g) / (m1 + m2)).toFixed(5));
 	$: a = parseFloat(((m1 * g - tension) / m1).toFixed(5));
 
 	$: um1 = u_apply === 'm1' ? u : -u;
 	$: um2 = u_apply === 'm2' ? u : -u;
 
-	let canvas: HTMLCanvasElement;
-	let ctx: CanvasRenderingContext2D;
-	let ready = false;
-
-	$: if (ready) draw(sim_m1 / (sim_m1 + sim_m2), sim_m2 / (sim_m1 + sim_m2));
-
-	function draw(m1YP: number, m2YP: number) {
-		const height = 200;
-		const width = 200;
-		const padding = 20;
-		const massRectW = 30;
-		const massRectH = 25;
-
-		// Clearing BG
-		ctx.fillRect(0, 0, 200, 200);
-
-		const pullyRad = 30;
-		ctx.beginPath();
-		ctx.arc(width / 2, padding + pullyRad, pullyRad, 0, 2 * Math.PI);
-		ctx.strokeStyle = 'red';
-		ctx.stroke();
-
-		const top0 = padding + 2 * pullyRad;
-		const top100 = height - padding - massRectH;
-
-		const mass1YPerc = m1YP;
-		const mass2YPerc = m2YP;
-
-		const m1Y = top0 + (top100 - top0) * mass1YPerc;
-		const m2Y = top0 + (top100 - top0) * mass2YPerc;
-
-		const m1X = width / 2 - pullyRad - massRectW / 2;
-		//const m1Y = mass1Y + padding;
-		ctx.strokeStyle = 'red';
-		ctx.strokeRect(m1X, m1Y, massRectW, massRectH);
-
-		const m2X = width / 2 + pullyRad - massRectW / 2;
-		//const m2Y = mass2Y + padding;
-		ctx.strokeStyle = 'red';
-		ctx.strokeRect(m2X, m2Y, massRectW, massRectH);
-
-		ctx.beginPath();
-		ctx.moveTo(m1X + massRectW / 2, m1Y);
-		ctx.lineTo(m1X + massRectW / 2, padding + pullyRad);
-		ctx.strokeStyle = 'green';
-		ctx.stroke();
-
-		ctx.beginPath();
-		ctx.moveTo(m2X + massRectW / 2, m2Y);
-		ctx.lineTo(m2X + massRectW / 2, padding + pullyRad);
-		ctx.strokeStyle = 'green';
-		ctx.stroke();
-	}
-
-	let sim_m1 = input_initial_m1y;
-	let sim_m2 = input_initial_m2y;
-	let t = 0;
+	// Draw function for the canvas that fallbacks to a normal state if
+	// there is no proper data
+	$: draw = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+		if (currentSceneSimResult) {
+			const {
+				value: { sim_m1, sim_m2 }
+			} = currentSceneSimResult;
+			atwoodDraw(ctx, width, height, sim_m1, sim_m2);
+		} else {
+			atwoodDraw(ctx, width, height, 1, 1);
+			return;
+		}
+	};
 
 	// Animation
-	let previous: number;
-
-	function physics(): AtwoodTimeData {
-		const stepMS = 1;
-		const dt = stepMS / 1000;
-
-		let sim_m1 = input_initial_m1y;
-		let sim_m2 = input_initial_m2y;
-		let v_m1 = um1;
-		let v_m2 = um2;
-		let t = 0;
-
-		const phyData = [];
-		phyData.push({ t, v_m1, v_m2, sim_m2, sim_m1 });
-
-		// eslint-disable-next-line no-constant-condition
-		while (true) {
-			v_m1 += a * dt;
-			v_m2 += -a * dt;
-
-			sim_m1 = valConstraint(sim_m1 + v_m1 * dt, 0, 100);
-			sim_m2 = valConstraint(sim_m2 + v_m2 * dt, 0, 100);
-			t += dt;
-
-			// Stop animation once at extreme points
-			if (sim_m1 === 0 || sim_m2 === 0 || sim_m1 === 100 || sim_m2 === 100) {
-				break;
-			}
-
-			phyData.push({ t, v_m1, v_m2, sim_m2, sim_m1 });
+	let currentSceneSimResult: AtwoodSimResult = {
+		t: 0,
+		value: {
+			sim_m1: input_initial_m1y,
+			sim_m2: input_initial_m2y,
+			v_m1: 0,
+			v_m2: 0
 		}
-
-		return phyData;
+	};
+	$: {
+		const _a = sim_results[count];
+		if (_a) {
+			currentSceneSimResult = _a;
+		} else {
+			currentSceneSimResult = {
+				t: 0,
+				value: {
+					sim_m1: input_initial_m1y,
+					sim_m2: input_initial_m2y,
+					v_m1: 0,
+					v_m2: 0
+				}
+			};
+		}
 	}
+
+	let previous: number;
 
 	let count = 0;
 	function animate(timestamp: number) {
@@ -123,33 +78,10 @@
 		previous = timestamp;
 
 		count = Math.min(count + elapsedMS, sim_results.length - 1);
-		const { sim_m1: v1, sim_m2: v2 } = sim_results[count];
-
-		sim_m2 = v2;
-		sim_m1 = v1;
-		t = count / 1000;
 
 		if (count < sim_results.length - 1) {
 			requestAnimationFrame(animate);
 		}
-	}
-
-	$: {
-		m1;
-		m2;
-		g;
-		u;
-		u_apply;
-		input_initial_m1y;
-		input_initial_m2y;
-		sim_results = [];
-	}
-
-	let sim = false;
-	function simulate() {
-		sim = true;
-		sim_results = physics();
-		sim = false;
 	}
 
 	function startAnimation() {
@@ -160,45 +92,25 @@
 		});
 	}
 
-	function timeDataToVTGraph(time_data: AtwoodTimeData) {
-		return {
-			labels: time_data.map((row) => row.t.toPrecision(4)),
-			datasets: [
-				{
-					label: 'v_m1',
-					data: time_data.map((row) => row.v_m1)
-				},
-				{
-					label: 'v_m2',
-					data: time_data.map((row) => row.v_m2)
-				}
-			]
-		};
-	}
-	function timeDataToYTGraph(time_data: AtwoodTimeData) {
-		return {
-			labels: time_data.map((row) => row.t.toPrecision(4)),
-			datasets: [
-				{
-					label: 'y_m1',
-					data: time_data.map((row) => row.sim_m1)
-				},
-				{
-					label: 'y_m2',
-					data: time_data.map((row) => row.sim_m2)
-				}
-			]
-		};
+	let sim = false;
+	let sim_results: AtwoodSimResult[] = [];
+
+	$: {
+		input_initial_m2y;
+		input_initial_m1y;
+		um2;
+		um1;
+		a;
+		sim_results = [];
 	}
 
-	type AtwoodTimeData = { t: number; sim_m1: number; sim_m2: number; v_m1: number; v_m2: number }[];
-
-	let sim_results: AtwoodTimeData = [];
-
-	onMount(() => {
-		ctx = canvas.getContext('2d')!;
-		ready = true;
-	});
+	// Whenever physics props change, re run the physics
+	function simulate() {
+		sim = true;
+		sim_results = atwoodPhysics({ input_initial_m2y, input_initial_m1y, um2, um1, a });
+		sim = false;
+		count = 0;
+	}
 
 	let isTheoryExpanded = true;
 </script>
@@ -302,7 +214,7 @@
 		{/if}
 	</section>
 
-	<section id="calculations">
+	<section>
 		<QuantityDisplay value={tension.toPrecision(4)} label="Tension" unit="N" />
 
 		<QuantityDisplay value={a.toPrecision(4)} label="Acceleration for m1"
@@ -319,31 +231,39 @@
 		</div>
 	</section>
 
-	<section id="viz">
+	<section>
 		<h2>Visualisation</h2>
-		<canvas class="mx-auto" bind:this={canvas} width="200" height="200" />
-		<div class="mb-2">
+		<FullWidthCanvas {draw} />
+		<div class="my-2">
 			<button
-				class="border border-black px-2 py-1"
+				class="border border-black px-2 py-1 disabled:border-gray-400"
 				on:click={() => {
 					simulate();
 				}}>Simulate</button
 			>
 			<button
 				class="border border-black px-2 py-1 disabled:border-gray-400"
+				class:hidden={sim || sim_results.length < 0}
 				disabled={sim || sim_results.length < 0}
 				on:click={() => {
 					startAnimation();
 				}}>Play</button
 			>
 		</div>
-		<QuantityDisplay value={t.toPrecision(4)} label="Time" unit="s" />
+		{#if currentSceneSimResult}
+			<QuantityDisplay value={currentSceneSimResult.t.toPrecision(4)} label="Time" unit="s" />
+			<QuantityDisplay
+				value={currentSceneSimResult.value.v_m1.toPrecision(4)}
+				label="Velocity of m_1"
+				unit="m/s"
+			/>
+		{/if}
 	</section>
 	<section>
 		<h2>Velocity vs Time</h2>
-		<Graph xlabel="Time (s)" ylabel="Velocity (m/s)" data={timeDataToVTGraph(sim_results)} />
+		<Graph xlabel="Time (s)" ylabel="Velocity (m/s)" data={graphs['v-t'](sim_results)} />
 		<hr />
 		<h2>Position vs Time</h2>
-		<Graph xlabel="Time (s)" ylabel="Position (m)" data={timeDataToYTGraph(sim_results)} />
+		<Graph xlabel="Time (s)" ylabel="Position (m)" data={graphs['y-t'](sim_results)} />
 	</section>
 </main>
