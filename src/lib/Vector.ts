@@ -50,4 +50,8 @@ export class Vector {
 	static ZERO(): Vector {
 		return new Vector(0, 0);
 	}
+
+	clone(): Vector {
+		return new Vector(this.x, this.y);
+	}
 }

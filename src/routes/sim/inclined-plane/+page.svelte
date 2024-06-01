@@ -6,13 +6,19 @@
 	import { Vector } from '$lib/Vector';
 	import type { EvalFunction } from 'mathjs';
 	import { onMount } from 'svelte';
+	import inclinedPlaneDraw from '$lib/sims/inclined-plane/draw';
+	import inclinedPlanePhysics from '$lib/sims/inclined-plane/physics';
+	import graphs from '$lib/sims/inclined-plane/graph';
 
-	let planeLength: number = 1;
-	let angle: number = 45;
+	import type { InclinedPlaneSimResult } from '$lib/sims/inclined-plane';
+	import FullWidthCanvas from '$components/FullWidthCanvas.svelte';
+
+	let planeLength: number;
+	let angle: number;
 	$: angleRad = (angle * Math.PI) / 180;
 
-	let mass = 1;
-	let gravity = 10;
+	let mass: number;
+	let gravity: number;
 
 	let sF = '0.0';
 	let kF = '0.4';
@@ -20,140 +26,34 @@
 	let staticFricFn: EvalFunction;
 	let kineticFricFn: EvalFunction;
 
-	let canvas: HTMLCanvasElement;
-	let context: CanvasRenderingContext2D;
-	let ready = false;
-
 	onMount(() => {
-		context = canvas.getContext('2d')!;
-		ready = true;
+		planeLength = 1;
+		angle = 45;
+		mass = 1;
+		gravity = 10;
+		setTimeout(() => simulate(), 0);
 	});
 
-	function draw(angleRad: number, planeLength: number, wordBodyPos: Vector) {
-		const height = 300;
-		const width = 300;
-		const padding = 50;
+	$: draw = (context: CanvasRenderingContext2D, width: number, height: number) => {
+		const bodyPos = currentSimResult ? currentSimResult.value.bodyPos : Vector.ZERO();
+		inclinedPlaneDraw(context, width, height, angleRad, planeLength, bodyPos);
+	};
 
-		context.fillStyle = 'black';
-		context.fillRect(0, 0, width, height);
+	let sim_results: InclinedPlaneSimResult[] = [];
 
-		// Drawing the inclined plane
-		const lenOfPlanePx = height - 2 * padding;
-		const startingPoint = new Vector(padding, height - padding);
-		const endingPoint = new Vector(
-			startingPoint.x + lenOfPlanePx * Math.cos(angleRad),
-			startingPoint.y - lenOfPlanePx * Math.sin(angleRad)
-		);
+	let currentSimResult: InclinedPlaneSimResult;
+	$: currentSimResult = sim_results[count];
 
-		context.lineWidth = 2;
-		context.strokeStyle = 'red';
-
-		context.beginPath();
-		context.moveTo(startingPoint.x, startingPoint.y);
-		context.lineTo(endingPoint.x, endingPoint.y);
-		context.stroke();
-
-		const gap = 10;
-		const origin = endingPoint.sub(
-			new Vector(
-				gap * Math.sin(angleRad), // cos(90 - angleRad)
-				gap * Math.cos(angleRad) // sin(90 - angleRad)
-			)
-		);
-
-		// Marking origin
-		context.strokeStyle = 'blue';
-		context.beginPath();
-		context.arc(origin.x, origin.y, 1, 0, 2 * Math.PI);
-		context.stroke();
-
-		const planeLengthPx = endingPoint.sub(startingPoint).len();
-		const simToWorldRatio = planeLengthPx / planeLength;
-
-		const bodyPos = origin.add(wordBodyPos.multiply(simToWorldRatio));
-
-		context.strokeStyle = 'green';
-		context.beginPath();
-		context.arc(bodyPos.x, bodyPos.y, 1, 0, 2 * Math.PI);
-		context.stroke();
-	}
-
-	$: if (ready) draw(angleRad, planeLength, bodyPos);
-
-	let bodyPos = new Vector(0, 0);
-	let bodyVel = new Vector(0, 0);
-
-	type IPData = { t: number; bodyPos: { x: number; y: number }; bodyVel: { x: number; y: number } };
-	let data: IPData[] = [];
-
-	function physics() {
-		const mg = mass * gravity;
-		const g = gravity;
-
-		const stepMS = 1;
-		const dt = stepMS / 1000;
-
-		let data: IPData[] = [];
-
-		let bodyPos = new Vector(0, 0);
-		let bodyVel = new Vector(0, 0);
-		let t = 0;
-
-		data.push({ t, bodyPos: { ...bodyPos }, bodyVel: { ...bodyVel } });
-
-		const gravityAccel = new Vector(
-			-g * Math.sin(angleRad) * Math.cos(angleRad),
-			g * Math.sin(angleRad) * Math.sin(angleRad)
-		);
-
-		// eslint-disable-next-line no-constant-condition
-		while (true) {
-			const sF = staticFricFn.evaluate({ t });
-			const kF = kineticFricFn.evaluate({ t });
-
-			const velAlongPlane = bodyVel.len();
-
-			let fricAcclAlongPlane = 0;
-
-			// Friction handling
-			const normal = mg * Math.cos(angleRad);
-			const aclAlongPlane = gravityAccel.len();
-
-			// Static friction
-			if (velAlongPlane === 0 || Math.abs(velAlongPlane) < 0.01) {
-				const maxFricAcl = (sF * normal) / mass;
-				fricAcclAlongPlane = -Math.min(maxFricAcl, aclAlongPlane);
-				if (fricAcclAlongPlane == -aclAlongPlane) {
-					alert('Object will be stationary now.');
-					break;
-				}
-			}
-			// Kinetic friction
-			else {
-				fricAcclAlongPlane = -Math.min((kF * normal) / mass, aclAlongPlane);
-			}
-
-			const fricAccl = new Vector(
-				-fricAcclAlongPlane * Math.cos(angleRad),
-				fricAcclAlongPlane * Math.sin(angleRad)
-			);
-
-			const accel = gravityAccel.add(fricAccl);
-			bodyVel.madd(accel.multiply(dt));
-			bodyPos.madd(bodyVel.multiply(dt));
-			t += dt;
-
-			if (bodyPos.y >= planeLength * Math.sin(angleRad)) {
-				break;
-			}
-
-			data.push({ t, bodyPos: { ...bodyPos }, bodyVel: { ...bodyVel } });
-		}
-
-		return data;
-	}
 	function simulate() {
-		data = physics();
+		sim_results = inclinedPlanePhysics({
+			planeLength,
+			mass,
+			gravity,
+			angleRad,
+			staticFricFn,
+			kineticFricFn
+		});
+		count = 0;
 	}
 
 	let previous: number;
@@ -170,41 +70,11 @@
 		const elapsedMS = Math.floor(timestamp - previous);
 		previous = timestamp;
 
-		count = Math.min(count + elapsedMS, data.length - 1);
-		const { bodyPos: vPos, bodyVel: vVel } = data[count];
+		count = Math.min(count + elapsedMS, sim_results.length - 1);
 
-		bodyPos = new Vector(vPos.x, vPos.y);
-		bodyVel = new Vector(vVel.x, vVel.y);
-		t = count / 1000;
-
-		if (count < data.length - 1) {
+		if (count < sim_results.length - 1) {
 			requestAnimationFrame(animate);
 		}
-	}
-
-	let t = 0;
-
-	function simResultsToVTGraph(data: IPData[]) {
-		return {
-			labels: data.map((row) => row.t.toPrecision(4)),
-			datasets: [
-				{
-					label: 'v',
-					data: data.map((row) => Math.sqrt(row.bodyVel.x ** 2 + row.bodyVel.y ** 2))
-				}
-			]
-		};
-	}
-	function simResultsToYTGraph(data: IPData[]) {
-		return {
-			labels: data.map((row) => row.t.toPrecision(4)),
-			datasets: [
-				{
-					label: 'v',
-					data: data.map((row) => row.bodyPos.y)
-				}
-			]
-		};
 	}
 </script>
 
@@ -245,22 +115,32 @@
 	</section>
 	<section>
 		<h2>Visualisation</h2>
-		<canvas height={300} width={300} bind:this={canvas}></canvas>
-		<QuantityDisplay label="Time" value={t.toPrecision(4)} unit="s" />
-		<QuantityDisplay label="Velocity" value={bodyVel.len().toPrecision(4)} unit="m/s" />
-		<button class="border border-black px-2 py-1 disabled:border-gray-400" on:click={simulate}
-			>Simulate</button
-		>
-		<button class="border border-black px-2 py-1 disabled:border-gray-400" on:click={startAnimation}
-			>Animate</button
-		>
+		<FullWidthCanvas {draw} />
+		<div class="my-2">
+			<button class="border border-black px-2 py-1 disabled:border-gray-400" on:click={simulate}
+				>Simulate</button
+			>
+			<button
+				class="border border-black px-2 py-1 disabled:border-gray-400"
+				on:click={startAnimation}>Animate</button
+			>
+		</div>
+
+		{#if currentSimResult}
+			<QuantityDisplay label="Time" value={currentSimResult.t.toPrecision(4)} unit="s" />
+			<QuantityDisplay
+				label="Velocity"
+				value={currentSimResult.value.bodyVel.len().toPrecision(4)}
+				unit="m/s"
+			/>
+		{/if}
 	</section>
 	<section>
 		<h2>Velocity vs Time</h2>
-		<Graph xlabel="Time (s)" ylabel="Velocity (m/s)" data={simResultsToVTGraph(data)} />
+		<Graph xlabel="Time (s)" ylabel="Velocity (m/s)" data={graphs['v-t'](sim_results)} />
 		<hr />
 		<h2>Y position vs Time</h2>
-		<Graph xlabel="Time (s)" ylabel="y (m)" data={simResultsToYTGraph(data)} />
+		<Graph xlabel="Time (s)" ylabel="y (m)" data={graphs['y-t'](sim_results)} />
 	</section>
 </main>
 
